@@ -1,0 +1,32 @@
+# Created by .ignore support plugin (hsz.mobi)
+
+# sbt
+# (may want to keep parts of 'project')
+bin/
+project/*
+target/
+build/
+
+# intellij idea
+*.log
+*.iml
+*.ipr
+*.iws
+.idea
+
+.history
+.scala_dependencies
+.cache
+.cache-main
+
+#general
+*.class
+*.env
+
+lib_managed
+null
+
+!project/build.properties
+!project/Dependencies.scala
+!project/plugins.sbt
+
