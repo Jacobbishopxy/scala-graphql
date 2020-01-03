@@ -2,24 +2,27 @@
 
 Sangria + Slick + Akka Http
 
+
+run server: `sbt run`
+
 ## Note 
 
 1. `prices`
 
-    - `Init`: demo data
+    - `Init.scala`: demo data
     
-    - `Model`: data model
+    - `Model.scala`: data model
     
-    - `Resolver`: data handler
+    - `Resolver.scala`: data handler
     
-    - `SchemaDef`: sangria schema
+    - `SchemaDef.scala`: sangria schema
 
 
 2. `package.scala`
 
-    - `SlickDynamic`: dynamically construct table columns
+    - `SlickDynamic.scala`: dynamically construct table columns
     
-    - `Map2CaseClass`: convert scala Map to scala case class
+    - `Map2CaseClass.scala`: convert scala Map to scala case class
 
 
 3. `Repo.scala`
@@ -32,7 +35,7 @@ Sangria + Slick + Akka Http
     Main
 
 
-5. `test/DevSlickDynamicColsQuery.scal`
+5. `test/DevSlickDynamicColsQuery.scala`
 
     test case
 
