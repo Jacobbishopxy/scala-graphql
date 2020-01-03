@@ -23,8 +23,6 @@ import scala.util.{Failure, Success}
 import GraphQLRequestUnmarshaller._
 import sangria.slowlog.SlowLog
 
-import com.github.jacobbishopxy.scalaGraphql.people.{Repo => PeopleRepo}
-
 
 /**
  * Created by Jacob Xie on 12/25/2019
@@ -36,7 +34,8 @@ object Server extends App with CorsSupport {
   import system.dispatcher
 
   // initialize Repo
-  private val peopleRepo = PeopleRepo.createDatabase()
+  val db = Repo.createDatabase()
+
 
   def executeGraphQL(query: Document,
                      operationName: Option[String],
@@ -44,15 +43,12 @@ object Server extends App with CorsSupport {
                      tracing: Boolean): StandardRoute =
     complete(
       Executor.execute(
-        BizStorage.schemaLink,
-        query,
-        BizStorage.repoLink,
+        schema = Repo.SD,
+        queryAst = query,
+        userContext = db,
         variables = if (variables.isNull) Json.obj() else variables,
         operationName = operationName,
-        //middleware = if (tracing) SlowLog.apolloTracing :: Nil else Nil,
-        middleware = BizStorage.authLink :: Nil,
-        deferredResolver = BizStorage.deferredResolverLink,
-        exceptionHandler = BizStorage.exceptionHandlerLink
+        middleware = if (tracing) SlowLog.apolloTracing :: Nil else Nil,
       )
         .map(OK → _)
         .recover {
@@ -138,7 +134,7 @@ object Server extends App with CorsSupport {
       "0.0.0.0",
       sys.props.get("http.port").fold(PORT)(_.toInt)
     )
-  println(s"open a browser with URL: http://localhost:$PORT")
+  println(s"open a browser with URL: http://localhost:$PORT\n")
 
 }
 
