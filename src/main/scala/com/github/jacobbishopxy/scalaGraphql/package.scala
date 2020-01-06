@@ -16,8 +16,7 @@ package object scalaGraphql {
   object SlickDynamic {
 
     import slick.ast.TypedType
-    import slick.jdbc.SQLServerProfile.api._
-
+    import slick.jdbc.H2Profile.api._
     import scala.reflect.ClassTag
 
     case class Dynamic[T <: Table[_], C](f: T => Rep[C])(implicit val ct: TypedType[C])
@@ -40,7 +39,6 @@ package object scalaGraphql {
   object Map2CaseClass {
 
     import shapeless._
-    import syntax.std.tuple._
     import labelled.{FieldType, field}
 
     trait FromMap[L <: HList] {

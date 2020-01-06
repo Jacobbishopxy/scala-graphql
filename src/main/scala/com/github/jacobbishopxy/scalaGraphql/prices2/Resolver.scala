@@ -1,14 +1,15 @@
-package com.github.jacobbishopxy.scalaGraphql.prices
+package com.github.jacobbishopxy.scalaGraphql.prices2
 
-import shapeless.syntax.std.product._
 import slick.jdbc.H2Profile.api._
 import slick.lifted.RepShape
+import shapeless.syntax.std.product._
+
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
 /**
- * Created by Jacob Xie on 1/2/2020
+ * Created by Jacob Xie on 1/6/2020
  */
 class Resolver(db: Database) {
 
@@ -16,14 +17,14 @@ class Resolver(db: Database) {
   import com.github.jacobbishopxy.scalaGraphql.SlickDynamic._
   import com.github.jacobbishopxy.scalaGraphql.Map2CaseClass
 
-  private def cond1: StockPricesEODTable => Rep[Boolean] =
-    (d: StockPricesEODTable) => d.isValid === 1
+  private def cond1: StockPricesEOD2Table => Rep[Boolean] =
+    (d: StockPricesEOD2Table) => d.isValid === 1
 
-  private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
-    (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
+  private def cond2(startDate: String, endDate: String): StockPricesEOD2Table => Rep[Boolean] =
+    (d: StockPricesEOD2Table) => d.date >= startDate && d.date <= endDate
 
   private val defaultStockPricesEODMap =
-    StockPricesEOD(
+    StockPricesEOD2(
       date = "",
       ticker = "",
       name = "",
@@ -44,16 +45,28 @@ class Resolver(db: Database) {
       average = 0,
       backwardAdjRatio = 0,
       forwardAdjRatio = 0,
-      isValid = 0
+      isValid = 0,
+      c1 = 0,
+      c2 = 0,
+      c3 = 0,
+      c4 = 0,
+      c5 = 0,
+      c6 = 0,
+      c7 = 0,
+      c8 = 0,
+      c9 = 0,
+      c10 = 0,
+      c11 = 0,
+      c12 = 0,
     )
       .toMap.map {
       case (k, v) => k.toString.tail -> v
     }
 
-  def getStockPricesEOD(fields: Seq[String])
-                       (ticker: Seq[String],
-                        startDate: String,
-                        endDate: String): Seq[StockPricesEOD] = {
+  def getStockPricesEOD2(fields: Seq[String])
+                        (ticker: Seq[String],
+                         startDate: String,
+                         endDate: String): List[StockPricesEOD2] = {
 
     val stringCols = Seq("ticker", "exchange", "date")
     val fieldMap = Map(
@@ -81,15 +94,15 @@ class Resolver(db: Database) {
 
     val dyn = fields.map(col =>
       if (stringCols.contains(col))
-        Dynamic[StockPricesEODTable, String](_.column(fieldMap.getOrElse(col, "")))
+        Dynamic[StockPricesEOD2Table, String](_.column(fieldMap.getOrElse(col, col)))
       else
-        Dynamic[StockPricesEODTable, Double](_.column(fieldMap.getOrElse(col, "")))
+        Dynamic[StockPricesEOD2Table, Double](_.column(fieldMap.getOrElse(col, col)))
     )
 
     implicit def dynamicShape[Level <: ShapeLevel]: DynamicProductShape[Level] =
       new DynamicProductShape[Level](dyn.map(_ => RepShape))
 
-    val que = StockPricesEODTableQuery
+    val que = StockPricesEOD2TableQuery
       .filter(d => d.ticker.inSet(ticker) && cond1(d) && cond2(startDate, endDate)(d))
       .map(a => dyn.map(d => d.f(a)))
       .result
@@ -98,10 +111,10 @@ class Resolver(db: Database) {
     val res = Await.result(db.run(que), 30.seconds)
     println(res)
 
-    val ans = res.foldLeft(List.empty[StockPricesEOD])((acc, ele) => {
+    val ans = res.foldLeft(List.empty[StockPricesEOD2])((acc, ele) => {
       val d = defaultStockPricesEODMap ++ fields.zip(ele).toMap
       println(d)
-      Map2CaseClass.to[StockPricesEOD].from(d) match {
+      Map2CaseClass.to[StockPricesEOD2].from(d) match {
         case Some(v) => acc :+ v
         case None => acc
       }
@@ -110,5 +123,6 @@ class Resolver(db: Database) {
     println(ans)
     ans
   }
+
 
 }

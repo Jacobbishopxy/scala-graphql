@@ -8,24 +8,44 @@ description := "scala graphql"
 scalaVersion := "2.12.6"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
+val sangriaV = "1.4.2"
+val sangiraSlowlogV = "0.1.8"
+val sangiraCirceV = "1.2.1"
+
+val akkaHttpV = "10.1.3"
+val akkaHttpCirceV = "1.21.0"
+
+val circeV = "0.12.3"
+val circeOptV = "0.12.0"
+
+val slickV = "3.3.1"
+val slf4jV = "1.7.26"
+val slicklessV = "0.3.6"
+
+val h2V = "1.4.196"
+
+val scalaTestV = "3.0.5"
+
 libraryDependencies ++= Seq(
-  "org.sangria-graphql" %% "sangria" % "1.4.2",
-  "org.sangria-graphql" %% "sangria-slowlog" % "0.1.8",
-  "org.sangria-graphql" %% "sangria-circe" % "1.2.1",
+  "org.sangria-graphql" %% "sangria" % sangriaV,
+  "org.sangria-graphql" %% "sangria-slowlog" % sangiraSlowlogV,
+  "org.sangria-graphql" %% "sangria-circe" % sangiraCirceV,
 
-  "com.typesafe.akka" %% "akka-http" % "10.1.3",
-  "de.heikoseeberger" %% "akka-http-circe" % "1.21.0",
+  "com.typesafe.akka" %% "akka-http" % akkaHttpV,
+  "de.heikoseeberger" %% "akka-http-circe" % akkaHttpCirceV,
 
-  "io.circe" %% "circe-core" % "0.9.3",
-  "io.circe" %% "circe-parser" % "0.9.3",
-  "io.circe" %% "circe-optics" % "0.9.3",
+  "io.circe" %% "circe-core" % circeV,
+  "io.circe" %% "circe-parser" % circeV,
+  "io.circe" %% "circe-optics" % circeOptV,
 
-  "com.typesafe.slick" %% "slick" % "3.2.1",
-  "com.typesafe.slick" %% "slick-hikaricp" % "3.2.1",
-  "org.slf4j" % "slf4j-nop" % "1.6.6",
-  "com.h2database" % "h2" % "1.4.196",
+  "com.typesafe.slick" %% "slick" % slickV,
+  "com.typesafe.slick" %% "slick-hikaricp" % slickV,
+  "org.slf4j" % "slf4j-nop" % slf4jV,
+  "io.underscore" % "slickless_2.12" % slicklessV,
 
-  "org.scalatest" %% "scalatest" % "3.0.5" % Test
+  "com.h2database" % "h2" % h2V,
+
+  "org.scalatest" %% "scalatest" % scalaTestV % Test
 )
 
 Revolver.settings
