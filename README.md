@@ -60,7 +60,7 @@ query {
 }
 ```
 
-And you will see message as below.
+And you will see message as below in terminal console.
 
 ```
 res.statements: select "stock_code", "trade_date", "exchange", "tclose" from "DEMO" where (("stock_code" in ('000001')) and ("is_valid" = 1)) and (("trade_date" >= '20190102') and ("trade_date" <= '20190105'))

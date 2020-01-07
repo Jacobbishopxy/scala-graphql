@@ -18,13 +18,11 @@ object SchemaDef {
 
   val StockPricesEOD2Type: ObjectType[Unit, StockPricesEOD2] =
     deriveObjectType(
-      ObjectTypeName("StockPricesEOD2"),
-      ObjectTypeDescription("股票日频行情"),
       ReplaceField("date", Field("date", StringType, Some("日期"),
         resolve = _.value.date)),
       ReplaceField("exchange", Field("exchange", OptionType(StringType), Some("交易所"),
         resolve = c => if (c.value.exchange == "001001") "SH" else "SZ")),
-      ExcludeFields("isValid")
+      DocumentField("name", "股票简称")
     )
 
   val stockTickers: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =

@@ -1,50 +1,56 @@
 package com.github.jacobbishopxy.scalaGraphql.prices2
 
 import slick.jdbc.H2Profile.api._
-import slick.ast.FieldSymbol
 import slick.lifted.ProvenShape
 import slickless._
 import shapeless._
-
+import sangria.macros.derive._
 
 /**
  * Created by Jacob Xie on 1/6/2020
  */
 object Model {
 
-  case class StockPricesEOD2(date: String,
-                             ticker: String,
-                             name: String,
-                             exchange: String,
-                             tCap: Double,
-                             mCap: Double,
-                             volume: Double,
-                             amount: Double,
-                             deals: Double,
-                             turnoverRate: Double,
-                             changeRate: Double,
-                             amplitude: Double,
-                             open: Double,
-                             high: Double,
-                             low: Double,
-                             close: Double,
-                             preClose: Double,
-                             average: Double,
-                             backwardAdjRatio: Double,
-                             forwardAdjRatio: Double,
-                             isValid: Int,
-                             c1: Double,
-                             c2: Double,
-                             c3: Double,
-                             c4: Double,
-                             c5: Double,
-                             c6: Double,
-                             c7: Double,
-                             c8: Double,
-                             c9: Double,
-                             c10: Double,
-                             c11: Double,
-                             c12: Double)
+  @GraphQLName("StockPricesEOD2")
+  @GraphQLDescription("股票日频行情2")
+  case class StockPricesEOD2(
+                              @GraphQLDescription("日期")
+                              date: String,
+                              @GraphQLDescription("股票代码")
+                              ticker: String,
+                              name: String,
+                              exchange: String,
+                              tCap: Double,
+                              mCap: Double,
+                              volume: Double,
+                              amount: Double,
+                              deals: Double,
+                              turnoverRate: Double,
+                              changeRate: Double,
+                              amplitude: Double,
+                              open: Double,
+                              high: Double,
+                              low: Double,
+                              close: Double,
+                              preClose: Double,
+                              average: Double,
+                              backwardAdjRatio: Double,
+                              forwardAdjRatio: Double,
+                              @GraphQLExclude
+                              isValid: Int,
+                              c1: Double,
+                              c2: Double,
+                              c3: Double,
+                              c4: Double,
+                              c5: Double,
+                              c6: Double,
+                              c7: Double,
+                              c8: Double,
+                              c9: Double,
+                              c10: Double,
+                              c11: Double,
+                              c12: Double
+                            )
 
 
   class StockPricesEOD2Table(tag: Tag)
