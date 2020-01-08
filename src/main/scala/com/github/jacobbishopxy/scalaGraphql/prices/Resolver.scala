@@ -1,11 +1,11 @@
 package com.github.jacobbishopxy.scalaGraphql.prices
 
-import shapeless.syntax.std.product._
 import slick.jdbc.H2Profile.api._
 import slick.lifted.RepShape
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by Jacob Xie on 1/2/2020
@@ -14,7 +14,7 @@ class Resolver(db: Database) {
 
   import Model._
   import com.github.jacobbishopxy.scalaGraphql.SlickDynamic._
-  import com.github.jacobbishopxy.scalaGraphql.Map2CaseClass
+  import com.github.jacobbishopxy.scalaGraphql.CaseClassInstanceValueUpdate._
 
   private def cond1: StockPricesEODTable => Rep[Boolean] =
     (d: StockPricesEODTable) => d.isValid === 1
@@ -22,7 +22,7 @@ class Resolver(db: Database) {
   private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
     (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
 
-  private val defaultStockPricesEODMap =
+  private val defaultStockPricesEOD =
     StockPricesEOD(
       date = "",
       ticker = "",
@@ -46,9 +46,6 @@ class Resolver(db: Database) {
       forwardAdjRatio = 0,
       isValid = 0
     )
-      .toMap.map {
-      case (k, v) => k.toString.tail -> v
-    }
 
   def getStockPricesEOD(fields: Seq[String])
                        (ticker: Seq[String],
@@ -99,11 +96,11 @@ class Resolver(db: Database) {
     println(res)
 
     val ans = res.foldLeft(List.empty[StockPricesEOD])((acc, ele) => {
-      val d = defaultStockPricesEODMap ++ fields.zip(ele).toMap
+      val d = Try(defaultStockPricesEOD.valueUpdate(fields.zip(ele).toMap))
       println(d)
-      Map2CaseClass.to[StockPricesEOD].from(d) match {
-        case Some(v) => acc :+ v
-        case None => acc
+      d match {
+        case Success(v) => acc :+ v
+        case Failure(_) => acc
       }
     })
     println("\n")

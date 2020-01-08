@@ -2,65 +2,35 @@ import scala.language.postfixOps
 import slick.jdbc.H2Profile.api._
 import slick.ast.{FieldSymbol, TypedType}
 import slick.lifted.{ProvenShape, RepShape}
-import shapeless.syntax.std.product._
-import shapeless._
-import syntax.std.tuple._
-import labelled.{FieldType, field}
 
 import scala.concurrent.Await
 import scala.reflect.ClassTag
 import scala.concurrent.duration._
+import scala.util.{Failure, Success, Try}
 
 /**
  * Created by Jacob Xie on 1/3/2020
  */
 object DevSlickDynamicColsQuery extends App {
 
-  object Map2CaseClass {
+  object CaseClassInstanceValueUpdate {
+    implicit class ValueUpdate[T](i: T) {
+      def valueUpdate(m: Map[String, Any]): T = {
+        for ((name, value) <- m) setField(name, value)
+        i
+      }
 
-    trait FromMap[L <: HList] {
-      def apply(m: Map[String, Any]): Option[L]
+      private def setField(fieldName: String, fieldValue: Any): Unit = {
+        i.getClass.getDeclaredFields.find(_.getName == fieldName) match {
+          case Some(field) =>
+            field.setAccessible(true)
+            field.set(i, fieldValue)
+          case None =>
+            throw new IllegalArgumentException(s"No field named $fieldName")
+        }
+      }
     }
-
-    trait LowPriorityFromMap {
-      implicit def hconsFromMap1[K <: Symbol, V, T <: HList](implicit
-                                                             witness: Witness.Aux[K],
-                                                             typeable: Typeable[V],
-                                                             fromMapT: Lazy[FromMap[T]]): FromMap[FieldType[K, V] :: T] =
-        (m: Map[String, Any]) => for {
-          v <- m.get(witness.value.name)
-          h <- typeable.cast(v)
-          t <- fromMapT.value(m)
-        } yield field[K](h) :: t
-    }
-
-    object FromMap extends LowPriorityFromMap {
-      implicit val hnilFromMap: FromMap[HNil] = (_: Map[String, Any]) => Some(HNil)
-
-      implicit def hconsFromMap0[K <: Symbol, V, R <: HList, T <: HList](implicit
-                                                                         witness: Witness.Aux[K],
-                                                                         gen: LabelledGeneric.Aux[V, R],
-                                                                         fromMapH: FromMap[R],
-                                                                         fromMapT: FromMap[T]): FromMap[FieldType[K, V] :: T] =
-        (m: Map[String, Any]) => for {
-          v <- m.get(witness.value.name)
-          r <- Typeable[Map[String, Any]].cast(v)
-          h <- fromMapH(r)
-          t <- fromMapT(m)
-        } yield field[K](gen.from(h)) :: t
-    }
-
-    class ConvertHelper[A] {
-      def from[R <: HList](m: Map[String, Any])(implicit
-                                                gen: LabelledGeneric.Aux[A, R],
-                                                fromMap: FromMap[R]): Option[A] =
-        fromMap(m).map(gen.from)
-    }
-
-    def to[A]: ConvertHelper[A] = new ConvertHelper[A]
-
   }
-
 
   case class StockPricesEOD(date: String = "",
                             ticker: String = "",
@@ -71,9 +41,7 @@ object DevSlickDynamicColsQuery extends App {
                             v: Double = 0,
                             a: Double = 0)
 
-  val defaultStockPricesEODMap = StockPricesEOD().toMap.map {
-    case (k, v) => k.toString.tail -> v
-  }
+  val defaultStockPricesEOD = StockPricesEOD()
 
   class StockPricesEODTable(tag: Tag)
     extends Table[(String, String)](tag, "SP_EOD") {
@@ -120,6 +88,8 @@ object DevSlickDynamicColsQuery extends App {
                          startDate: String,
                          endDate: String): List[StockPricesEOD] = {
 
+    import CaseClassInstanceValueUpdate._
+
     val stringCols = Seq("ticker", "date")
 
     val dyn = fields.map(col =>
@@ -141,11 +111,11 @@ object DevSlickDynamicColsQuery extends App {
 
     val r = Await.result(db.run(res), 30.seconds)
     r.foldLeft(List.empty[StockPricesEOD])((acc, ele) => {
-      val d = defaultStockPricesEODMap ++ fields.zip(ele).toMap
+      val d = Try(defaultStockPricesEOD.valueUpdate(fields.zip(ele).toMap))
       println(d)
-      Map2CaseClass.to[StockPricesEOD].from(d) match {
-        case Some(v) => acc :+ v
-        case None => acc
+      d match {
+        case Success(v) => acc :+ v
+        case Failure(_) => acc
       }
     })
   }
