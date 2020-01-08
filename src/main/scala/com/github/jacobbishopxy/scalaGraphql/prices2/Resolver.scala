@@ -5,7 +5,6 @@ import slick.lifted.RepShape
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 /**
  * Created by Jacob Xie on 1/6/2020
@@ -14,7 +13,7 @@ class Resolver(db: Database) {
 
   import Model._
   import com.github.jacobbishopxy.scalaGraphql.SlickDynamic._
-  import com.github.jacobbishopxy.scalaGraphql.CaseClassInstanceValueUpdate._
+  import com.github.jacobbishopxy.scalaGraphql.DynHelper._
 
   private def cond1: StockPricesEOD2Table => Rep[Boolean] =
     (d: StockPricesEOD2Table) => d.isValid === 1
@@ -59,41 +58,51 @@ class Resolver(db: Database) {
       c12 = 0,
     )
 
+
+
+  val fieldM = Map(
+    "date" -> DynCol[StockPricesEOD2Table]("trade_date").str,
+    "ticker" -> DynCol[StockPricesEOD2Table]("stock_code").str,
+    "name" -> DynCol[StockPricesEOD2Table]("stock_name").str,
+    "exchange" -> DynCol[StockPricesEOD2Table]("exchange").str,
+    "tCap" -> DynCol[StockPricesEOD2Table]("tcap").dbl,
+    "mCap" -> DynCol[StockPricesEOD2Table]("mcap").dbl,
+    "volume" -> DynCol[StockPricesEOD2Table]("volume").dbl,
+    "amount" -> DynCol[StockPricesEOD2Table]("amount").dbl,
+    "deals" -> DynCol[StockPricesEOD2Table]("deals").dbl,
+    "turnoverRate" -> DynCol[StockPricesEOD2Table]("turnover_rate").dbl,
+    "changeRate" -> DynCol[StockPricesEOD2Table]("change_rate").dbl,
+    "amplitude" -> DynCol[StockPricesEOD2Table]("amplitude").dbl,
+    "open" -> DynCol[StockPricesEOD2Table]("topen").dbl,
+    "high" -> DynCol[StockPricesEOD2Table]("high").dbl,
+    "low" -> DynCol[StockPricesEOD2Table]("low").dbl,
+    "close" -> DynCol[StockPricesEOD2Table]("tclose").dbl,
+    "preClose" -> DynCol[StockPricesEOD2Table]("lclose").dbl,
+    "average" -> DynCol[StockPricesEOD2Table]("average").dbl,
+    "backwardAdjRatio" -> DynCol[StockPricesEOD2Table]("matiply_ratio").dbl,
+    "forwardAdjRatio" -> DynCol[StockPricesEOD2Table]("backward_adjratio").dbl,
+    "isValid" -> DynCol[StockPricesEOD2Table]("is_valid").int,
+    "c1" -> DynCol[StockPricesEOD2Table]("c1").dbl,
+    "c2" -> DynCol[StockPricesEOD2Table]("c2").dbl,
+    "c3" -> DynCol[StockPricesEOD2Table]("c3").dbl,
+    "c4" -> DynCol[StockPricesEOD2Table]("c4").dbl,
+    "c5" -> DynCol[StockPricesEOD2Table]("c5").dbl,
+    "c6" -> DynCol[StockPricesEOD2Table]("c6").dbl,
+    "c7" -> DynCol[StockPricesEOD2Table]("c7").dbl,
+    "c8" -> DynCol[StockPricesEOD2Table]("c8").dbl,
+    "c9" -> DynCol[StockPricesEOD2Table]("c9").dbl,
+    "c10" -> DynCol[StockPricesEOD2Table]("c10").dbl,
+    "c11" -> DynCol[StockPricesEOD2Table]("c11").dbl,
+    "c12" -> DynCol[StockPricesEOD2Table]("c12").dbl,
+  )
+
+
   def getStockPricesEOD2(fields: Seq[String])
                         (ticker: Seq[String],
                          startDate: String,
                          endDate: String): List[StockPricesEOD2] = {
 
-    val stringCols = Seq("ticker", "exchange", "date")
-    val fieldMap = Map(
-      "date" -> "trade_date",
-      "ticker" -> "stock_code",
-      "name" -> "stock_name",
-      "exchange" -> "exchange",
-      "tCap" -> "tcap",
-      "mCap" -> "mcap",
-      "volume" -> "volume",
-      "amount" -> "amount",
-      "deals" -> "deals",
-      "turnoverRate" -> "turnover_rate",
-      "changeRate" -> "change_rate",
-      "amplitude" -> "amplitude",
-      "open" -> "topen",
-      "high" -> "high",
-      "low" -> "low",
-      "close" -> "tclose",
-      "preClose" -> "lclose",
-      "average" -> "average",
-      "backwardAdjRatio" -> "matiply_ratio",
-      "forwardAdjRatio" -> "backward_adjratio",
-    )
-
-    val dyn = fields.map(col =>
-      if (stringCols.contains(col))
-        Dynamic[StockPricesEOD2Table, String](_.column(fieldMap.getOrElse(col, col)))
-      else
-        Dynamic[StockPricesEOD2Table, Double](_.column(fieldMap.getOrElse(col, col)))
-    )
+    val dyn = constructDyn(fieldM, fields)
 
     implicit def dynamicShape[Level <: ShapeLevel]: DynamicProductShape[Level] =
       new DynamicProductShape[Level](dyn.map(_ => RepShape))
@@ -107,15 +116,7 @@ class Resolver(db: Database) {
     val res = Await.result(db.run(que), 30.seconds)
     println(res)
 
-    val ans = res.foldLeft(List.empty[StockPricesEOD2])((acc, ele) => {
-      val d = Try(defaultStockPricesEOD.valueUpdate(fields.zip(ele).toMap))
-      println(d)
-      d match {
-        case Success(v) => acc :+ v
-        case Failure(_) => acc
-      }
-    })
-    println("\n")
+    val ans = resConvert[StockPricesEOD2](defaultStockPricesEOD, fields, res)
     println(ans)
     ans
   }

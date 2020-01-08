@@ -5,7 +5,7 @@
  */
 object Dev extends App {
 
-  import io.circe.{ Decoder, Encoder }
+  import io.circe.{Decoder, Encoder}
   import io.circe.syntax._
 
   case class User(id: Long, firstName: String, lastName: String)

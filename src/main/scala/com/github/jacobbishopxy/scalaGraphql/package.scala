@@ -2,6 +2,9 @@ package com.github.jacobbishopxy
 
 import sangria.schema.Context
 
+import scala.util.{Failure, Success, Try}
+
+
 /**
  * Created by Jacob Xie on 1/3/2020
  */
@@ -36,13 +39,15 @@ package object scalaGraphql {
 
 
   object CaseClassInstanceValueUpdate {
+
     implicit class ValueUpdate[T](i: T) {
+
       def valueUpdate(m: Map[String, Any]): T = {
-        for ((name, value) <- m) setField(name, value)
+        m.foreach { case (name, value) => setField(name, value) }
         i
       }
 
-      private def setField(fieldName: String, fieldValue: Any): Unit = {
+      private def setField(fieldName: String, fieldValue: Any): Unit =
         i.getClass.getDeclaredFields.find(_.getName == fieldName) match {
           case Some(field) =>
             field.setAccessible(true)
@@ -50,8 +55,40 @@ package object scalaGraphql {
           case None =>
             throw new IllegalArgumentException(s"No field named $fieldName")
         }
-      }
     }
+  }
+
+
+  object DynHelper {
+
+    import slick.jdbc.H2Profile.api._
+    import SlickDynamic._
+    import CaseClassInstanceValueUpdate._
+
+    case class DynCol[S <: Table[_]](col: String) {
+      def str: Dynamic[S, String] = Dynamic[S, String](_.column(col))
+      def dbl: Dynamic[S, Double] = Dynamic[S, Double](_.column(col))
+      def int: Dynamic[S, Int] = Dynamic[S, Int](_.column(col))
+      def optStr: Dynamic[S, Option[String]] = Dynamic[S, Option[String]](_.column(col))
+      def optDbl: Dynamic[S, Option[Double]] = Dynamic[S, Option[Double]](_.column(col))
+      def optInt: Dynamic[S, Option[Int]] = Dynamic[S, Option[Int]](_.column(col))
+    }
+
+    def constructDyn[T](m: Map[String, T], fields: Seq[String]): Seq[T] =
+      fields.foldLeft(Seq.empty[T]) {
+        case (acc, ele) => m.get(ele).fold(acc)(acc :+ _)
+      }
+
+    def resConvert[R](defaultCaseClass: R, fields: Seq[String], res: Seq[Seq[Any]]): List[R] =
+      res.foldLeft(List.empty[R]) {
+        case (acc, ele) =>
+          val d = Try(defaultCaseClass.valueUpdate(fields.zip(ele).toMap))
+          println(d)
+          d match {
+            case Success(v) => acc :+ v
+            case Failure(_) => acc
+          }
+      }
   }
 
 }
