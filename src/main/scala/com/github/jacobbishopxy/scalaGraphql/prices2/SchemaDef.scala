@@ -15,14 +15,31 @@ object SchemaDef {
   import Model._
   import com.github.jacobbishopxy.scalaGraphql.getField
 
+  implicit val AdjustedPriceType: ObjectType[Unit, AdjustedPrice] =
+    deriveObjectType[Unit, AdjustedPrice](
+      ObjectTypeDescription("后复权价格"),
+      DocumentField("adjPrice", "复权后价格")
+    )
+
+
+  val KLineType: InterfaceType[Unit, KLine] = InterfaceType(
+    "KLine",
+    "K线key",
+    fields[Unit, KLine](
+      Field("date", StringType, Some("日期"), resolve = _.value.date),
+      Field("ticker", StringType, Some("股票代码"), resolve = _.value.date),
+      Field("name", OptionType(StringType), Some("股票简称"), resolve = _.value.date),
+      Field("exchange", OptionType(StringType), Some("交易所"),
+        resolve = c => if (c.value.exchange == "001001") "SH" else "SZ"),
+    )
+  )
+
 
   val StockPricesEOD2Type: ObjectType[Unit, StockPricesEOD2] =
     deriveObjectType(
-      ReplaceField("date", Field("date", StringType, Some("日期"),
-        resolve = _.value.date)),
-      ReplaceField("exchange", Field("exchange", OptionType(StringType), Some("交易所"),
-        resolve = c => if (c.value.exchange == "001001") "SH" else "SZ")),
-      DocumentField("name", "股票简称")
+      Interfaces(KLineType),
+      IncludeMethods("backwardAdjustedPrice"),
+      ExcludeFields("date", "ticker", "name", "exchange")
     )
 
   val stockTickers: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =

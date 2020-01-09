@@ -126,7 +126,7 @@ object Server extends App with CorsSupport {
         redirect("/graphql", PermanentRedirect)
       }
 
-  val PORT = 8080
+  val PORT = 8070
 
   Http()
     .bindAndHandle(

@@ -11,46 +11,53 @@ import sangria.macros.derive._
  */
 object Model {
 
+  trait KLine {
+    def date: String
+    def ticker: String
+    def name: String
+    def exchange: String
+  }
+
+  case class AdjustedPrice(adjPrice: Double)
+
   @GraphQLName("StockPricesEOD2")
   @GraphQLDescription("股票日频行情2")
-  case class StockPricesEOD2(
-                              @GraphQLDescription("日期")
-                              date: String,
-                              @GraphQLDescription("股票代码")
-                              ticker: String,
-                              name: String,
-                              exchange: String,
-                              tCap: Double,
-                              mCap: Double,
-                              volume: Double,
-                              amount: Double,
-                              deals: Double,
-                              turnoverRate: Double,
-                              changeRate: Double,
-                              amplitude: Double,
-                              open: Double,
-                              high: Double,
-                              low: Double,
-                              close: Double,
-                              preClose: Double,
-                              average: Double,
-                              backwardAdjRatio: Double,
-                              forwardAdjRatio: Double,
-                              @GraphQLExclude
-                              isValid: Int,
-                              c1: Double,
-                              c2: Double,
-                              c3: Double,
-                              c4: Double,
-                              c5: Double,
-                              c6: Double,
-                              c7: Double,
-                              c8: Double,
-                              c9: Double,
-                              c10: Double,
-                              c11: Double,
-                              c12: Double
-                            )
+  case class StockPricesEOD2(date: String,
+                             ticker: String,
+                             name: String,
+                             exchange: String,
+                             tCap: Double,
+                             mCap: Double,
+                             volume: Double,
+                             amount: Double,
+                             deals: Double,
+                             turnoverRate: Double,
+                             changeRate: Double,
+                             amplitude: Double,
+                             open: Double,
+                             high: Double,
+                             low: Double,
+                             close: Double,
+                             preClose: Double,
+                             average: Double,
+                             backwardAdjRatio: Double,
+                             forwardAdjRatio: Double,
+                             @GraphQLExclude isValid: Int,
+                             c1: Double,
+                             c2: Double,
+                             c3: Double,
+                             c4: Double,
+                             c5: Double,
+                             c6: Double,
+                             c7: Double,
+                             c8: Double,
+                             c9: Double,
+                             c10: Double,
+                             c11: Double,
+                             c12: Double) extends KLine {
+    def backwardAdjustedPrice(price: Double, backwardAdjRatio: Double): AdjustedPrice =
+      AdjustedPrice(price * backwardAdjRatio)
+  }
 
 
   class StockPricesEOD2Table(tag: Tag)

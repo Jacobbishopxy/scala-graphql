@@ -43,7 +43,7 @@ run server: `sbt run`
 
 ## Test
 
-Copy following query string to [localhost](http://localhost:8080/graphql)
+Copy following query string to [localhost](http://localhost:8070/graphql)
 
 ```
 query {
