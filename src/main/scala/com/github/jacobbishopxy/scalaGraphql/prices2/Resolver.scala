@@ -59,42 +59,42 @@ class Resolver(db: Database) {
     )
 
 
-
-  val fieldM = Map(
-    "date" -> DynCol[StockPricesEOD2Table]("trade_date").str,
-    "ticker" -> DynCol[StockPricesEOD2Table]("stock_code").str,
-    "name" -> DynCol[StockPricesEOD2Table]("stock_name").str,
-    "exchange" -> DynCol[StockPricesEOD2Table]("exchange").str,
-    "tCap" -> DynCol[StockPricesEOD2Table]("tcap").dbl,
-    "mCap" -> DynCol[StockPricesEOD2Table]("mcap").dbl,
-    "volume" -> DynCol[StockPricesEOD2Table]("volume").dbl,
-    "amount" -> DynCol[StockPricesEOD2Table]("amount").dbl,
-    "deals" -> DynCol[StockPricesEOD2Table]("deals").dbl,
-    "turnoverRate" -> DynCol[StockPricesEOD2Table]("turnover_rate").dbl,
-    "changeRate" -> DynCol[StockPricesEOD2Table]("change_rate").dbl,
-    "amplitude" -> DynCol[StockPricesEOD2Table]("amplitude").dbl,
-    "open" -> DynCol[StockPricesEOD2Table]("topen").dbl,
-    "high" -> DynCol[StockPricesEOD2Table]("high").dbl,
-    "low" -> DynCol[StockPricesEOD2Table]("low").dbl,
-    "close" -> DynCol[StockPricesEOD2Table]("tclose").dbl,
-    "preClose" -> DynCol[StockPricesEOD2Table]("lclose").dbl,
-    "average" -> DynCol[StockPricesEOD2Table]("average").dbl,
-    "backwardAdjRatio" -> DynCol[StockPricesEOD2Table]("matiply_ratio").dbl,
-    "forwardAdjRatio" -> DynCol[StockPricesEOD2Table]("backward_adjratio").dbl,
-    "isValid" -> DynCol[StockPricesEOD2Table]("is_valid").int,
-    "c1" -> DynCol[StockPricesEOD2Table]("c1").dbl,
-    "c2" -> DynCol[StockPricesEOD2Table]("c2").dbl,
-    "c3" -> DynCol[StockPricesEOD2Table]("c3").dbl,
-    "c4" -> DynCol[StockPricesEOD2Table]("c4").dbl,
-    "c5" -> DynCol[StockPricesEOD2Table]("c5").dbl,
-    "c6" -> DynCol[StockPricesEOD2Table]("c6").dbl,
-    "c7" -> DynCol[StockPricesEOD2Table]("c7").dbl,
-    "c8" -> DynCol[StockPricesEOD2Table]("c8").dbl,
-    "c9" -> DynCol[StockPricesEOD2Table]("c9").dbl,
-    "c10" -> DynCol[StockPricesEOD2Table]("c10").dbl,
-    "c11" -> DynCol[StockPricesEOD2Table]("c11").dbl,
-    "c12" -> DynCol[StockPricesEOD2Table]("c12").dbl,
-  )
+  private val fieldM: Map[String, Dynamic[StockPricesEOD2Table, _ >: String with Double with Int]] =
+    Map(
+      "date" -> "trade_date".toDyn.str,
+      "ticker" -> "stock_code".toDyn.str,
+      "name" -> "stock_name".toDyn.str,
+      "exchange" -> "exchange".toDyn.str,
+      "tCap" -> "tcap".toDyn.dbl,
+      "mCap" -> "mcap".toDyn.dbl,
+      "volume" -> "volume".toDyn.dbl,
+      "amount" -> "amount".toDyn.dbl,
+      "deals" -> "deals".toDyn.dbl,
+      "turnoverRate" -> "turnover_rate".toDyn.dbl,
+      "changeRate" -> "change_rate".toDyn.dbl,
+      "amplitude" -> "amplitude".toDyn.dbl,
+      "open" -> "topen".toDyn.dbl,
+      "high" -> "high".toDyn.dbl,
+      "low" -> "low".toDyn.dbl,
+      "close" -> "tclose".toDyn.dbl,
+      "preClose" -> "lclose".toDyn.dbl,
+      "average" -> "average".toDyn.dbl,
+      "backwardAdjRatio" -> "matiply_ratio".toDyn.dbl,
+      "forwardAdjRatio" -> "backward_adjratio".toDyn.dbl,
+      "isValid" -> "is_valid".toDyn.int,
+      "c1" -> "c1".toDyn.dbl,
+      "c2" -> "c2".toDyn.dbl,
+      "c3" -> "c3".toDyn.dbl,
+      "c4" -> "c4".toDyn.dbl,
+      "c5" -> "c5".toDyn.dbl,
+      "c6" -> "c6".toDyn.dbl,
+      "c7" -> "c7".toDyn.dbl,
+      "c8" -> "c8".toDyn.dbl,
+      "c9" -> "c9".toDyn.dbl,
+      "c10" -> "c10".toDyn.dbl,
+      "c11" -> "c11".toDyn.dbl,
+      "c12" -> "c12".toDyn.dbl,
+    )
 
 
   def getStockPricesEOD2(fields: Seq[String])
@@ -111,14 +111,10 @@ class Resolver(db: Database) {
       .filter(d => d.ticker.inSet(ticker) && cond1(d) && cond2(startDate, endDate)(d))
       .map(a => dyn.map(d => d.f(a)))
       .result
-    println(s"\nque.statements: ${que.statements.head}\n")
 
     val res = Await.result(db.run(que), 30.seconds)
-    println(res)
 
-    val ans = resConvert[StockPricesEOD2](defaultStockPricesEOD, fields, res)
-    println(ans)
-    ans
+    resConvert[StockPricesEOD2](defaultStockPricesEOD, fields, res)
   }
 
 

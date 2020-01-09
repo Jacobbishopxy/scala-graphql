@@ -65,13 +65,13 @@ package object scalaGraphql {
     import SlickDynamic._
     import CaseClassInstanceValueUpdate._
 
-    case class DynCol[S <: Table[_]](col: String) {
-      def str: Dynamic[S, String] = Dynamic[S, String](_.column(col))
-      def dbl: Dynamic[S, Double] = Dynamic[S, Double](_.column(col))
-      def int: Dynamic[S, Int] = Dynamic[S, Int](_.column(col))
-      def optStr: Dynamic[S, Option[String]] = Dynamic[S, Option[String]](_.column(col))
-      def optDbl: Dynamic[S, Option[Double]] = Dynamic[S, Option[Double]](_.column(col))
-      def optInt: Dynamic[S, Option[Int]] = Dynamic[S, Option[Int]](_.column(col))
+    case class DynCol[T <: Table[_]](col: String) {
+      def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
+      def dbl: Dynamic[T, Double] = Dynamic[T, Double](_.column(col))
+      def int: Dynamic[T, Int] = Dynamic[T, Int](_.column(col))
+      def optStr: Dynamic[T, Option[String]] = Dynamic[T, Option[String]](_.column(col))
+      def optDbl: Dynamic[T, Option[Double]] = Dynamic[T, Option[Double]](_.column(col))
+      def optInt: Dynamic[T, Option[Int]] = Dynamic[T, Option[Int]](_.column(col))
     }
 
     def constructDyn[T](m: Map[String, T], fields: Seq[String]): Seq[T] =
@@ -82,13 +82,16 @@ package object scalaGraphql {
     def resConvert[R](defaultCaseClass: R, fields: Seq[String], res: Seq[Seq[Any]]): List[R] =
       res.foldLeft(List.empty[R]) {
         case (acc, ele) =>
-          val d = Try(defaultCaseClass.valueUpdate(fields.zip(ele).toMap))
-          println(d)
-          d match {
+          Try(defaultCaseClass.valueUpdate(fields.zip(ele).toMap)) match {
             case Success(v) => acc :+ v
             case Failure(_) => acc
           }
       }
+
+    implicit class DynMaker(d: String) {
+      def toDyn[T <: Table[_]]: DynCol[T] = DynCol[T](d)
+    }
+
   }
 
 }
