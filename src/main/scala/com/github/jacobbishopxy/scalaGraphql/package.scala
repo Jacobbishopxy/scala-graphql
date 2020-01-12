@@ -1,6 +1,7 @@
 package com.github.jacobbishopxy
 
 import sangria.schema.Context
+import slick.jdbc.JdbcProfile
 
 import scala.util.{Failure, Success, Try}
 
@@ -15,10 +16,12 @@ package object scalaGraphql {
     c.astFields.head.selections.map(_.renderCompact)
 
 
-  object SlickDynamic {
+  trait SlickDynamic {
+
+    val driver: JdbcProfile
 
     import slick.ast.TypedType
-    import slick.jdbc.H2Profile.api._
+    import driver.api._
     import scala.reflect.ClassTag
 
     case class Dynamic[T <: Table[_], C](f: T => Rep[C])(implicit val ct: TypedType[C])
@@ -59,10 +62,11 @@ package object scalaGraphql {
   }
 
 
-  object DynHelper {
+  trait DynHelper extends SlickDynamic {
 
-    import slick.jdbc.H2Profile.api._
-    import SlickDynamic._
+    val driver: JdbcProfile
+    import driver.api._
+
     import CaseClassInstanceValueUpdate._
 
     case class DynCol[T <: Table[_]](col: String) {
@@ -83,8 +87,11 @@ package object scalaGraphql {
       res.foldLeft(List.empty[R]) {
         case (acc, ele) =>
           Try(defaultCaseClass.valueUpdate(fields.zip(ele).toMap)) match {
-            case Success(v) => acc :+ v
-            case Failure(_) => acc
+            case Success(v) =>
+              println(v)
+              acc :+ v
+            case Failure(_) =>
+              acc
           }
       }
 

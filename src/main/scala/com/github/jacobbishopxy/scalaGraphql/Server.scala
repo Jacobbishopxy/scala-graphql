@@ -30,11 +30,12 @@ import sangria.slowlog.SlowLog
 object Server extends App with CorsSupport {
   implicit val system: ActorSystem = ActorSystem("sangria-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
-
   import system.dispatcher
 
+  import slick.jdbc.H2Profile
+
   // initialize Repo
-  val db = Repo.createDatabase()
+  val repo = new Repo(H2Profile, "h2mem")
 
 
   def executeGraphQL(query: Document,
@@ -43,9 +44,9 @@ object Server extends App with CorsSupport {
                      tracing: Boolean): StandardRoute =
     complete(
       Executor.execute(
-        schema = Repo.SD,
+        schema = repo.SD,
         queryAst = query,
-        userContext = db,
+        userContext = repo,
         variables = if (variables.isNull) Json.obj() else variables,
         operationName = operationName,
         middleware = if (tracing) SlowLog.apolloTracing :: Nil else Nil,

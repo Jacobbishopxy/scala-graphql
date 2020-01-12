@@ -15,7 +15,6 @@ object SchemaDef {
   import Model._
   import com.github.jacobbishopxy.scalaGraphql.getField
 
-
   val StockPricesEODType: ObjectType[Unit, StockPricesEOD] =
     deriveObjectType(
       ObjectTypeName("StockPricesEOD"),

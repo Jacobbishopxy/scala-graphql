@@ -1,20 +1,22 @@
 package com.github.jacobbishopxy.scalaGraphql.prices
 
-import slick.jdbc.H2Profile.api._
+import com.github.jacobbishopxy.scalaGraphql.DynHelper
+import slick.jdbc.JdbcProfile
 import slick.lifted.RepShape
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 /**
  * Created by Jacob Xie on 1/2/2020
  */
-class Resolver(db: Database) {
+class Resolver(val driver: JdbcProfile, dbCfg: String) extends Model with DynHelper {
 
+  import driver.api._
   import Model._
-  import com.github.jacobbishopxy.scalaGraphql.SlickDynamic._
-  import com.github.jacobbishopxy.scalaGraphql.CaseClassInstanceValueUpdate._
+
+
+  private val db = driver.backend.Database.forConfig(dbCfg)
 
   private def cond1: StockPricesEODTable => Rep[Boolean] =
     (d: StockPricesEODTable) => d.isValid === 1
@@ -47,41 +49,37 @@ class Resolver(db: Database) {
       isValid = 0
     )
 
+  private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: String with Double]] = Map(
+    "date" -> "trade_date".toDyn.str,
+      "ticker" -> "stock_code".toDyn.str,
+      "name" -> "stock_name".toDyn.str,
+      "exchange" -> "exchange".toDyn.str,
+      "tCap" -> "tcap".toDyn.dbl,
+      "mCap" -> "mcap".toDyn.dbl,
+      "volume" -> "volume".toDyn.dbl,
+      "amount" -> "amount".toDyn.dbl,
+      "deals" -> "deals".toDyn.dbl,
+      "turnoverRate" -> "turnover_rate".toDyn.dbl,
+      "changeRate" -> "change_rate".toDyn.dbl,
+      "amplitude" -> "amplitude".toDyn.dbl,
+      "open" -> "topen".toDyn.dbl,
+      "high" -> "high".toDyn.dbl,
+      "low" -> "low".toDyn.dbl,
+      "close" -> "tclose".toDyn.dbl,
+      "preClose" -> "lclose".toDyn.dbl,
+      "average" -> "average".toDyn.dbl,
+      "backwardAdjRatio" -> "matiply_ratio".toDyn.dbl,
+      "forwardAdjRatio" -> "backward_adjratio".toDyn.dbl,
+      "isValid" -> "is_valid".toDyn.dbl,
+  )
+
   def getStockPricesEOD(fields: Seq[String])
                        (ticker: Seq[String],
                         startDate: String,
                         endDate: String): Seq[StockPricesEOD] = {
 
-    val stringCols = Seq("ticker", "exchange", "date")
-    val fieldMap = Map(
-      "date" -> "trade_date",
-      "ticker" -> "stock_code",
-      "name" -> "stock_name",
-      "exchange" -> "exchange",
-      "tCap" -> "tcap",
-      "mCap" -> "mcap",
-      "volume" -> "volume",
-      "amount" -> "amount",
-      "deals" -> "deals",
-      "turnoverRate" -> "turnover_rate",
-      "changeRate" -> "change_rate",
-      "amplitude" -> "amplitude",
-      "open" -> "topen",
-      "high" -> "high",
-      "low" -> "low",
-      "close" -> "tclose",
-      "preClose" -> "lclose",
-      "average" -> "average",
-      "backwardAdjRatio" -> "matiply_ratio",
-      "forwardAdjRatio" -> "backward_adjratio",
-    )
 
-    val dyn = fields.map(col =>
-      if (stringCols.contains(col))
-        Dynamic[StockPricesEODTable, String](_.column(fieldMap.getOrElse(col, "")))
-      else
-        Dynamic[StockPricesEODTable, Double](_.column(fieldMap.getOrElse(col, "")))
-    )
+    val dyn = constructDyn(stockPricesEODFieldMap, fields)
 
     implicit def dynamicShape[Level <: ShapeLevel]: DynamicProductShape[Level] =
       new DynamicProductShape[Level](dyn.map(_ => RepShape))
@@ -90,20 +88,10 @@ class Resolver(db: Database) {
       .filter(d => d.ticker.inSet(ticker) && cond1(d) && cond2(startDate, endDate)(d))
       .map(a => dyn.map(d => d.f(a)))
       .result
-    println(s"\nque.statements: ${que.statements.head}\n")
+    println(s"\nque.statements: ${que.statements.head}")
 
     val res = Await.result(db.run(que), 30.seconds)
-    println(res)
-
-    val ans = res.foldLeft(List.empty[StockPricesEOD])((acc, ele) => {
-      val d = Try(defaultStockPricesEOD.valueUpdate(fields.zip(ele).toMap))
-      println(d)
-      d match {
-        case Success(v) => acc :+ v
-        case Failure(_) => acc
-      }
-    })
-    println("\n")
+    val ans = resConvert[StockPricesEOD](defaultStockPricesEOD, fields, res)
     println(ans)
     ans
   }

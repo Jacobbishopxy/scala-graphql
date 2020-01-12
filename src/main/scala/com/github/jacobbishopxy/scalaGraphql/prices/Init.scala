@@ -1,7 +1,7 @@
 package com.github.jacobbishopxy.scalaGraphql.prices
 
-import slick.jdbc.SQLServerProfile.api._
 
+import slick.jdbc.JdbcProfile
 import scala.concurrent.Await
 import scala.concurrent.duration._
 
@@ -9,9 +9,11 @@ import scala.concurrent.duration._
 /**
  * Created by Jacob Xie on 1/3/2020
  */
-class Init(db: Database) {
+class Init(val driver: JdbcProfile, dbCfg: String) extends Model {
 
-  import Model._
+  import driver.api._
+
+  private val db = driver.backend.Database.forConfig(dbCfg)
 
   val initActions = DBIO.seq(
     StockPricesEODTableQuery.schema.create,
@@ -103,6 +105,7 @@ class Init(db: Database) {
       ("20190131", "600000", "n2", "001001", 2D, 3D, 4D, 5D, 6D, 7D, 8D, 9D, 10D, 11D, 12D, 13D, 14D, 15D, 16D, 17D, 1),
     )
   )
+
 
   def initDatabase(): Unit = {
     Await.result(db.run(initActions), 30.seconds)
