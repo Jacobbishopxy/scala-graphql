@@ -15,6 +15,32 @@ package object scalaGraphql {
   def getField[T](c: Context[T, Unit]): Vector[String] =
     c.astFields.head.selections.map(_.renderCompact)
 
+  object CaseClassInstanceValueUpdate {
+
+    implicit class ValueUpdate[T](i: T) {
+
+      def valueUpdate(m: Map[String, Any]): T = {
+        m.foreach { case (name, value) => setField(name, value) }
+        i
+      }
+
+      private def setField(fieldName: String, fieldValue: Any): Unit =
+        i.getClass.getDeclaredFields.find(_.getName == fieldName) match {
+          case Some(field) =>
+            field.setAccessible(true)
+            field.set(i, fieldValue)
+          case None =>
+            throw new IllegalArgumentException(s"No field named $fieldName")
+        }
+    }
+  }
+
+  trait DBComponent {
+    val driver: JdbcProfile
+    val dbCfg: String
+
+    val db: driver.backend.DatabaseDef = driver.backend.Database.forConfig(dbCfg)
+  }
 
   trait SlickDynamic {
 
@@ -40,36 +66,10 @@ package object scalaGraphql {
     }
   }
 
-
-  object CaseClassInstanceValueUpdate {
-
-    implicit class ValueUpdate[T](i: T) {
-
-      def valueUpdate(m: Map[String, Any]): T = {
-        m.foreach { case (name, value) => setField(name, value) }
-        i
-      }
-
-      private def setField(fieldName: String, fieldValue: Any): Unit =
-        i.getClass.getDeclaredFields.find(_.getName == fieldName) match {
-          case Some(field) =>
-            field.setAccessible(true)
-            field.set(i, fieldValue)
-          case None =>
-            throw new IllegalArgumentException(s"No field named $fieldName")
-        }
-    }
-  }
-
-
-  trait DynHelper extends SlickDynamic {
-
-    val dbCfg: String
+  trait DynHelper extends SlickDynamic with DBComponent {
 
     import driver.api._
     import CaseClassInstanceValueUpdate._
-
-    val db: driver.backend.DatabaseDef = driver.backend.Database.forConfig(dbCfg)
 
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))

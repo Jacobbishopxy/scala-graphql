@@ -15,14 +15,14 @@ class Repo(val driver: JdbcProfile, dbCfg: String) {
   // init database, for demo
   new prices.Init(driver, dbCfg).initDatabase()
 
-  private val FieldPrices = SchemaPrices.FieldDef
 
-  private val fld: List[Field[Repo, Unit]] =
-    FieldPrices
+  private val queryFields: List[Field[Repo, Unit]] =
+    SchemaPrices.FieldDef
 
   private val QueryType: ObjectType[Repo, Unit] =
-    ObjectType("Query", fields[Repo, Unit](fld: _*))
+    ObjectType("Query", fields[Repo, Unit](queryFields: _*))
 
+  // schema definition
   val SD: Schema[Repo, Unit] = Schema(QueryType)
 
 }
