@@ -64,10 +64,12 @@ package object scalaGraphql {
 
   trait DynHelper extends SlickDynamic {
 
-    val driver: JdbcProfile
-    import driver.api._
+    val dbCfg: String
 
+    import driver.api._
     import CaseClassInstanceValueUpdate._
+
+    val db: driver.backend.DatabaseDef = driver.backend.Database.forConfig(dbCfg)
 
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))

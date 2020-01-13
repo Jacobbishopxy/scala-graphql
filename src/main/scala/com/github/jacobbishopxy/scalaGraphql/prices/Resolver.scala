@@ -10,13 +10,11 @@ import scala.concurrent.duration._
 /**
  * Created by Jacob Xie on 1/2/2020
  */
-class Resolver(val driver: JdbcProfile, dbCfg: String) extends Model with DynHelper {
+class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with DynHelper {
 
   import driver.api._
   import Model._
 
-
-  private val db = driver.backend.Database.forConfig(dbCfg)
 
   private def cond1: StockPricesEODTable => Rep[Boolean] =
     (d: StockPricesEODTable) => d.isValid === 1
@@ -51,26 +49,26 @@ class Resolver(val driver: JdbcProfile, dbCfg: String) extends Model with DynHel
 
   private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: String with Double]] = Map(
     "date" -> "trade_date".toDyn.str,
-      "ticker" -> "stock_code".toDyn.str,
-      "name" -> "stock_name".toDyn.str,
-      "exchange" -> "exchange".toDyn.str,
-      "tCap" -> "tcap".toDyn.dbl,
-      "mCap" -> "mcap".toDyn.dbl,
-      "volume" -> "volume".toDyn.dbl,
-      "amount" -> "amount".toDyn.dbl,
-      "deals" -> "deals".toDyn.dbl,
-      "turnoverRate" -> "turnover_rate".toDyn.dbl,
-      "changeRate" -> "change_rate".toDyn.dbl,
-      "amplitude" -> "amplitude".toDyn.dbl,
-      "open" -> "topen".toDyn.dbl,
-      "high" -> "high".toDyn.dbl,
-      "low" -> "low".toDyn.dbl,
-      "close" -> "tclose".toDyn.dbl,
-      "preClose" -> "lclose".toDyn.dbl,
-      "average" -> "average".toDyn.dbl,
-      "backwardAdjRatio" -> "matiply_ratio".toDyn.dbl,
-      "forwardAdjRatio" -> "backward_adjratio".toDyn.dbl,
-      "isValid" -> "is_valid".toDyn.dbl,
+    "ticker" -> "stock_code".toDyn.str,
+    "name" -> "stock_name".toDyn.str,
+    "exchange" -> "exchange".toDyn.str,
+    "tCap" -> "tcap".toDyn.dbl,
+    "mCap" -> "mcap".toDyn.dbl,
+    "volume" -> "volume".toDyn.dbl,
+    "amount" -> "amount".toDyn.dbl,
+    "deals" -> "deals".toDyn.dbl,
+    "turnoverRate" -> "turnover_rate".toDyn.dbl,
+    "changeRate" -> "change_rate".toDyn.dbl,
+    "amplitude" -> "amplitude".toDyn.dbl,
+    "open" -> "topen".toDyn.dbl,
+    "high" -> "high".toDyn.dbl,
+    "low" -> "low".toDyn.dbl,
+    "close" -> "tclose".toDyn.dbl,
+    "preClose" -> "lclose".toDyn.dbl,
+    "average" -> "average".toDyn.dbl,
+    "backwardAdjRatio" -> "matiply_ratio".toDyn.dbl,
+    "forwardAdjRatio" -> "backward_adjratio".toDyn.dbl,
+    "isValid" -> "is_valid".toDyn.dbl,
   )
 
   def getStockPricesEOD(fields: Seq[String])
