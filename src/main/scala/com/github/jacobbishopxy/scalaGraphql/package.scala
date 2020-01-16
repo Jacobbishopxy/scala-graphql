@@ -1,5 +1,7 @@
 package com.github.jacobbishopxy
 
+import java.lang.reflect.Modifier
+
 import sangria.schema.Context
 import slick.jdbc.JdbcProfile
 
@@ -15,23 +17,44 @@ package object scalaGraphql {
   def getField[T](c: Context[T, Unit]): Vector[String] =
     c.astFields.head.selections.map(_.renderCompact)
 
-  object CaseClassInstanceValueUpdate {
+  object Copyable {
 
-    implicit class ValueUpdate[T](i: T) {
+    def copy[T](o: T, m: Map[String, Any]): T = {
+      val copier = new Copier(o.getClass)
+      copier(o, m.toList: _*)
+    }
 
-      def valueUpdate(m: Map[String, Any]): T = {
-        m.foreach { case (name, value) => setField(name, value) }
-        i
-      }
-
-      private def setField(fieldName: String, fieldValue: Any): Unit =
-        i.getClass.getDeclaredFields.find(_.getName == fieldName) match {
-          case Some(field) =>
-            field.setAccessible(true)
-            field.set(i, fieldValue)
-          case None =>
-            throw new IllegalArgumentException(s"No field named $fieldName")
+    /**
+     * Utility class for providing copying of a designated case class with minimal overhead.
+     */
+    class Copier(cls: Class[_]) {
+      private val ctor = cls.getConstructors.apply(0)
+      private val getters = cls.getDeclaredFields
+        .filter {
+          f =>
+            val m = f.getModifiers
+            Modifier.isPrivate(m) && Modifier.isFinal(m) && !Modifier.isStatic(m)
         }
+        .take(ctor.getParameterTypes.length)
+        .map(f => cls.getMethod(f.getName))
+
+      /**
+       * A reflective, non-generic version of case class copying.
+       */
+      def apply[T](o: T, v: (String, Any)*): T = {
+        val byIx = v.map {
+          case (name, value) =>
+            val ix = getters.indexWhere(_.getName == name)
+            if (ix < 0) throw new IllegalArgumentException("Unknown field: " + name)
+            (ix, value.asInstanceOf[Object])
+        }.toMap
+
+        val args = getters.indices.map {
+          i =>
+            byIx.getOrElse(i, getters(i).invoke(o))
+        }
+        ctor.newInstance(args: _*).asInstanceOf[T]
+      }
     }
   }
 
@@ -69,7 +92,7 @@ package object scalaGraphql {
   trait DynHelper extends SlickDynamic with DBComponent {
 
     import driver.api._
-    import CaseClassInstanceValueUpdate._
+    import Copyable.copy
 
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
@@ -88,7 +111,7 @@ package object scalaGraphql {
     def resConvert[R](defaultCaseClass: R, fields: Seq[String], res: Seq[Seq[Any]]): List[R] =
       res.foldLeft(List.empty[R]) {
         case (acc, ele) =>
-          Try(defaultCaseClass.valueUpdate(fields.zip(ele).toMap)) match {
+          Try(copy(defaultCaseClass, fields.zip(ele).toMap)) match {
             case Success(v) =>
               println(v)
               acc :+ v
