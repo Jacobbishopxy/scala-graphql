@@ -40,6 +40,14 @@ object SchemaDef {
         val fields = getField(c)
         val rsv = c.ctx.resolverPrices.getStockPricesEOD(fields)(_, _, _)
         rsv(c.arg(stockTickers), c.arg(startDate), c.arg(endDate))
-      })
+      }),
+    Field("getStockPricesEODPro", ListType(StockPricesEODType),
+      description = Some("获取股票日频行情pro"),
+      arguments = stockTickers :: startDate :: endDate :: Nil,
+      resolve = c => {
+        val fields = getField(c)
+        val rsv = c.ctx.resolverPrices.getStockPricesEODPro(fields)(_, _, _)
+        rsv(c.arg(stockTickers), c.arg(startDate), c.arg(endDate))
+      }),
   )
 }

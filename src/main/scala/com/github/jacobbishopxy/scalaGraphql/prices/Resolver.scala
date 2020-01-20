@@ -71,6 +71,7 @@ class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with Dy
     "isValid" -> "is_valid".toDyn.dbl,
   )
 
+  // old version
   def getStockPricesEOD(fields: Seq[String])
                        (ticker: Seq[String],
                         startDate: String,
@@ -93,5 +94,17 @@ class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with Dy
     println(ans)
     ans
   }
+
+  // new version: using constructQueryFn
+  private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery
+    .filter(d => d.ticker.inSet(t) && cond1(d) && cond2(s, e)(d))
+
+  private val stockPricesFn = constructQueryFn(stockPricesEODFieldMap, defaultStockPricesEOD)(_, _)
+
+  def getStockPricesEODPro(fields: Seq[String])
+                          (ticker: Seq[String],
+                           startDate: String,
+                           endDate: String): Seq[StockPricesEOD] =
+    stockPricesFn(query(ticker, startDate, endDate), fields)
 
 }
