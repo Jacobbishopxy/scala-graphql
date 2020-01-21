@@ -6,7 +6,6 @@ import sangria.schema.Context
 import slick.jdbc.JdbcProfile
 import slick.lifted.RepShape
 
-import scala.collection.immutable
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
@@ -95,6 +94,8 @@ package object scalaGraphql {
 
   trait DynHelper extends SlickDynamic with DBComponent {
 
+    val queryTimeout: FiniteDuration = 30.seconds
+
     import driver.api._
     import Copyable.copy
 
@@ -138,7 +139,7 @@ package object scalaGraphql {
         .map(a => dyn.map(d => d.f(a)))
         .result
 
-      val res = Await.result(db.run(que), 30.seconds)
+      val res = Await.result(db.run(que), queryTimeout)
       resConvert(defaultCase, selectedFields, res)
     }
 
