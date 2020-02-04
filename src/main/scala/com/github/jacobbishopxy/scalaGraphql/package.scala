@@ -99,13 +99,24 @@ package object scalaGraphql {
     import driver.api._
     import Copyable.copy
 
+    type DynType = String
+      with Double
+      with Int
+      with Boolean
+      with Option[String]
+      with Option[Double]
+      with Option[Int]
+      with Option[Boolean]
+
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
       def dbl: Dynamic[T, Double] = Dynamic[T, Double](_.column(col))
       def int: Dynamic[T, Int] = Dynamic[T, Int](_.column(col))
+      def bll: Dynamic[T, Boolean] = Dynamic[T, Boolean](_.column(col))
       def optStr: Dynamic[T, Option[String]] = Dynamic[T, Option[String]](_.column(col))
       def optDbl: Dynamic[T, Option[Double]] = Dynamic[T, Option[Double]](_.column(col))
       def optInt: Dynamic[T, Option[Int]] = Dynamic[T, Option[Int]](_.column(col))
+      def optBll: Dynamic[T, Option[Boolean]] = Dynamic[T, Option[Boolean]](_.column(col))
     }
 
     def constructDyn[T](m: Map[String, T], fields: Seq[String]): Seq[T] =
@@ -138,6 +149,7 @@ package object scalaGraphql {
       val que = query
         .map(a => dyn.map(d => d.f(a)))
         .result
+      println(s"que.statements: ${que.statements.head}")
 
       val res = Await.result(db.run(que), queryTimeout)
       resConvert(defaultCase, selectedFields, res)

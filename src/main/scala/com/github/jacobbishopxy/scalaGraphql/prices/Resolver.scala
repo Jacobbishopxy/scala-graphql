@@ -13,7 +13,7 @@ class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with Dy
 
 
   private def cond1: StockPricesEODTable => Rep[Boolean] =
-    (d: StockPricesEODTable) => d.isValid === 1
+    (d: StockPricesEODTable) => d.isValid.getOrElse(0) === 1
 
   private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
     (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
@@ -22,49 +22,49 @@ class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with Dy
     StockPricesEOD(
       date = "",
       ticker = "",
-      name = "",
-      exchange = "",
-      tCap = 0,
-      mCap = 0,
-      volume = 0,
-      amount = 0,
-      deals = 0,
-      turnoverRate = 0,
-      changeRate = 0,
-      amplitude = 0,
-      open = 0,
-      high = 0,
-      low = 0,
-      close = 0,
-      preClose = 0,
-      average = 0,
-      backwardAdjRatio = 0,
-      forwardAdjRatio = 0,
-      isValid = 0
+      name = None,
+      exchange =None,
+      tCap = None,
+      mCap = None,
+      volume = None,
+      amount = None,
+      deals = None,
+      turnoverRate = None,
+      changeRate = None,
+      amplitude = None,
+      open = None,
+      high = None,
+      low = None,
+      close = None,
+      preClose = None,
+      average = None,
+      backwardAdjRatio = None,
+      forwardAdjRatio = None,
+      isValid = None,
     )
 
-  private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: String with Double]] = Map(
+  private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: DynType]] = Map(
     "date" -> "trade_date".toDyn.str,
     "ticker" -> "stock_code".toDyn.str,
-    "name" -> "stock_name".toDyn.str,
-    "exchange" -> "exchange".toDyn.str,
-    "tCap" -> "tcap".toDyn.dbl,
-    "mCap" -> "mcap".toDyn.dbl,
-    "volume" -> "volume".toDyn.dbl,
-    "amount" -> "amount".toDyn.dbl,
-    "deals" -> "deals".toDyn.dbl,
-    "turnoverRate" -> "turnover_rate".toDyn.dbl,
-    "changeRate" -> "change_rate".toDyn.dbl,
-    "amplitude" -> "amplitude".toDyn.dbl,
-    "open" -> "topen".toDyn.dbl,
-    "high" -> "high".toDyn.dbl,
-    "low" -> "low".toDyn.dbl,
-    "close" -> "tclose".toDyn.dbl,
-    "preClose" -> "lclose".toDyn.dbl,
-    "average" -> "average".toDyn.dbl,
-    "backwardAdjRatio" -> "matiply_ratio".toDyn.dbl,
-    "forwardAdjRatio" -> "backward_adjratio".toDyn.dbl,
-    "isValid" -> "is_valid".toDyn.dbl,
+    "name" -> "stock_name".toDyn.optStr,
+    "exchange" -> "exchange".toDyn.optStr,
+    "tCap" -> "tcap".toDyn.optDbl,
+    "mCap" -> "mcap".toDyn.optDbl,
+    "volume" -> "volume".toDyn.optDbl,
+    "amount" -> "amount".toDyn.optDbl,
+    "deals" -> "deals".toDyn.optDbl,
+    "turnoverRate" -> "turnover_rate".toDyn.optDbl,
+    "changeRate" -> "change_rate".toDyn.optDbl,
+    "amplitude" -> "amplitude".toDyn.optDbl,
+    "open" -> "topen".toDyn.optDbl,
+    "high" -> "high".toDyn.optDbl,
+    "low" -> "low".toDyn.optDbl,
+    "close" -> "tclose".toDyn.optDbl,
+    "preClose" -> "lclose".toDyn.optDbl,
+    "average" -> "average".toDyn.optDbl,
+    "backwardAdjRatio" -> "matiply_ratio".toDyn.optDbl,
+    "forwardAdjRatio" -> "backward_adjratio".toDyn.optDbl,
+    "isValid" -> "is_valid".toDyn.optInt,
   )
 
   private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery

@@ -21,25 +21,25 @@ trait Model {
 
     def date: Rep[String] = column[String]("trade_date")
     def ticker: Rep[String] = column[String]("stock_code")
-    def name: Rep[String] = column[String]("stock_name")
-    def exchange: Rep[String] = column[String]("exchange")
-    def tCap: Rep[Double] = column[Double]("tcap")
-    def mCap: Rep[Double] = column[Double]("mcap")
-    def volume: Rep[Double] = column[Double]("volume")
-    def amount: Rep[Double] = column[Double]("amount")
-    def deals: Rep[Double] = column[Double]("deals")
-    def turnoverRate: Rep[Double] = column[Double]("turnover_rate")
-    def changeRate: Rep[Double] = column[Double]("change_rate")
-    def amplitude: Rep[Double] = column[Double]("amplitude")
-    def open: Rep[Double] = column[Double]("topen")
-    def high: Rep[Double] = column[Double]("high")
-    def low: Rep[Double] = column[Double]("low")
-    def close: Rep[Double] = column[Double]("tclose")
-    def preClose: Rep[Double] = column[Double]("lclose")
-    def average: Rep[Double] = column[Double]("average")
-    def backwardAdjRatio: Rep[Double] = column[Double]("matiply_ratio")
-    def forwardAdjRatio: Rep[Double] = column[Double]("backward_adjratio")
-    def isValid: Rep[Int] = column[Int]("is_valid")
+    def name: Rep[Option[String]] = column[Option[String]]("stock_name")
+    def exchange: Rep[Option[String]] = column[Option[String]]("exchange")
+    def tCap: Rep[Option[Double]] = column[Option[Double]]("tcap")
+    def mCap: Rep[Option[Double]] = column[Option[Double]]("mcap")
+    def volume: Rep[Option[Double]] = column[Option[Double]]("volume")
+    def amount: Rep[Option[Double]] = column[Option[Double]]("amount")
+    def deals: Rep[Option[Double]] = column[Option[Double]]("deals")
+    def turnoverRate: Rep[Option[Double]] = column[Option[Double]]("turnover_rate")
+    def changeRate: Rep[Option[Double]] = column[Option[Double]]("change_rate")
+    def amplitude: Rep[Option[Double]] = column[Option[Double]]("amplitude")
+    def open: Rep[Option[Double]] = column[Option[Double]]("topen")
+    def high: Rep[Option[Double]] = column[Option[Double]]("high")
+    def low: Rep[Option[Double]] = column[Option[Double]]("low")
+    def close: Rep[Option[Double]] = column[Option[Double]]("tclose")
+    def preClose: Rep[Option[Double]] = column[Option[Double]]("lclose")
+    def average: Rep[Option[Double]] = column[Option[Double]]("average")
+    def backwardAdjRatio: Rep[Option[Double]] = column[Option[Double]]("matiply_ratio")
+    def forwardAdjRatio: Rep[Option[Double]] = column[Option[Double]]("backward_adjratio")
+    def isValid: Rep[Option[Int]] = column[Option[Int]]("is_valid")
 
     override def * : ProvenShape[StockPricesEOD] = (
       date ::
@@ -75,25 +75,25 @@ object Model {
 
   case class StockPricesEOD(date: String,
                             ticker: String,
-                            name: String,
-                            exchange: String,
-                            tCap: Double,
-                            mCap: Double,
-                            volume: Double,
-                            amount: Double,
-                            deals: Double,
-                            turnoverRate: Double,
-                            changeRate: Double,
-                            amplitude: Double,
-                            open: Double,
-                            high: Double,
-                            low: Double,
-                            close: Double,
-                            preClose: Double,
-                            average: Double,
-                            backwardAdjRatio: Double,
-                            forwardAdjRatio: Double,
-                            isValid: Int)
+                            name: Option[String],
+                            exchange: Option[String],
+                            tCap: Option[Double],
+                            mCap: Option[Double],
+                            volume: Option[Double],
+                            amount: Option[Double],
+                            deals: Option[Double],
+                            turnoverRate: Option[Double],
+                            changeRate: Option[Double],
+                            amplitude: Option[Double],
+                            open: Option[Double],
+                            high: Option[Double],
+                            low: Option[Double],
+                            close: Option[Double],
+                            preClose: Option[Double],
+                            average: Option[Double],
+                            backwardAdjRatio: Option[Double],
+                            forwardAdjRatio: Option[Double],
+                            isValid: Option[Int])
 
 }
 
