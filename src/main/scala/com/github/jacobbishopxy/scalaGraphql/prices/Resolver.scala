@@ -70,7 +70,7 @@ class Resolver(val driver: JdbcProfile, val dbCfg: String) extends Model with Dy
   private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery
     .filter(d => d.ticker.inSet(t) && cond1(d) && cond2(s, e)(d))
 
-  private val stockPricesFn = constructQueryFn(stockPricesEODFieldMap, defaultStockPricesEOD)(_, _)
+  private val stockPricesFn = constructQueryFnSeqResult(stockPricesEODFieldMap, defaultStockPricesEOD)(_, _)
 
   def getStockPricesEOD(fields: Seq[String])
                        (ticker: Seq[String],

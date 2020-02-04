@@ -136,10 +136,10 @@ package object scalaGraphql {
           }
       }
 
-    def constructQueryFn[T <: Table[_], C, R](fieldMap: Map[String, Dynamic[T, _]],
-                                              defaultCase: C)
-                                             (query: Query[T, C, Seq],
-                                              selectedFields: Seq[String]): Seq[C] = {
+    def constructQueryFnSeqResult[T <: Table[_], C, R](fieldMap: Map[String, Dynamic[T, _]],
+                                                       defaultCase: C)
+                                                      (query: Query[T, C, Seq],
+                                                       selectedFields: Seq[String]): Seq[C] = {
 
       val dyn = constructDyn(fieldMap, selectedFields)
 

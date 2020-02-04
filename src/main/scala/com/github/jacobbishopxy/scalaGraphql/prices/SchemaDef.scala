@@ -22,7 +22,7 @@ object SchemaDef {
       ReplaceField("date", Field("date", StringType, Some("日期"),
         resolve = _.value.date)),
       ReplaceField("exchange", Field("exchange", OptionType(StringType), Some("交易所"),
-        resolve = c => if (c.value.exchange == "001001") "SH" else "SZ")),
+        resolve = c => if (c.value.exchange.getOrElse("") == "001001") "SH" else "SZ")),
       ExcludeFields("isValid")
     )
 
