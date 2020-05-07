@@ -1,11 +1,12 @@
 
 name := "scala-graphql"
 
+organization := "com.github.jacobbishopxy"
 version := "0.1"
 
 description := "scala graphql"
 
-scalaVersion := "2.12.6"
+scalaVersion := "2.12.10"
 scalacOptions ++= Seq("-deprecation", "-feature")
 
 val sangriaV = "1.4.2"
@@ -23,6 +24,8 @@ val slf4jV = "1.7.26"
 val slicklessV = "0.3.6"
 
 val h2V = "1.4.196"
+val pgV = "42.2.9"
+val msSqlV = "7.4.1.jre8"
 
 val scalaTestV = "3.0.5"
 
@@ -44,9 +47,15 @@ libraryDependencies ++= Seq(
   "io.underscore" % "slickless_2.12" % slicklessV,
 
   "com.h2database" % "h2" % h2V,
+  "org.postgresql" % "postgresql" % pgV,
+  "com.microsoft.sqlserver" % "mssql-jdbc" % msSqlV,
 
   "org.scalatest" %% "scalatest" % scalaTestV % Test
 )
 
 Revolver.settings
 enablePlugins(JavaAppPackaging)
+enablePlugins(PackPlugin)
+
+packGenerateWindowsBatFile := false
+packJvmOpts := Map("scala-ei-graphql" -> Seq("-Xms8g", "-Xmx8g", "-J-Xss8M"))

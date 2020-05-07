@@ -99,6 +99,8 @@ package object scalaGraphql {
     import driver.api._
     import Copyable.copy
 
+    type DynType = String with Double with Int with Option[String] with Option[Double] with Option[Int]
+
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
       def dbl: Dynamic[T, Double] = Dynamic[T, Double](_.column(col))
