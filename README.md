@@ -25,11 +25,11 @@
 
 2. `package.scala`: core functionality
 
+    - `Copyable`: copy a class class and update by scala `Map`
+    
     - `SlickDynamic`: dynamically construct table columns
     
-    - `CaseClassInstanceValueUpdate`: update case class instance by scala Map
-    
-    - `DynHelper`: simplify 
+    - `DynHelper`: call `constructQueryFn` 
 
 
 3. `Repo.scala`
@@ -59,9 +59,9 @@ query {
     start: "20190102" 
     end: "20190105"
   ) {
-    ticker
     date
-    exchange
+    ticker
+    open
     close
   }
 }
@@ -70,12 +70,51 @@ query {
 And you will see message as below in terminal console.
 
 ```
-res.statements: select "stock_code", "trade_date", "exchange", "tclose" from "DEMO" where (("stock_code" in ('000001')) and ("is_valid" = 1)) and (("trade_date" >= '20190102') and ("trade_date" <= '20190105'))
+que.statements: select "trade_date", "stock_code", "topen", "tclose" from "DEMO" where (("stock_code" in ('000001')) and (ifnull("is_valid",0) = 1)) and (("trade_date" >= '20190101') and ("trade_date" <= '20190105'))
+StockPricesEOD(20190101,000001,None,None,None,None,None,None,None,None,None,None,Some(10.0),None,None,Some(13.0),None,None,None,None,None)
+StockPricesEOD(20190102,000001,None,None,None,None,None,None,None,None,None,None,Some(10.0),None,None,Some(13.0),None,None,None,None,None)
+StockPricesEOD(20190103,000001,None,None,None,None,None,None,None,None,None,None,Some(10.0),None,None,Some(13.0),None,None,None,None,None)
+StockPricesEOD(20190104,000001,None,None,None,None,None,None,None,None,None,None,Some(10.0),None,None,Some(13.0),None,None,None,None,None)
+StockPricesEOD(20190105,000001,None,None,None,None,None,None,None,None,None,None,Some(10.0),None,None,Some(13.0),None,None,None,None,None)
+```
 
-Map(amplitude -> 0.0, name -> , preClose -> 0.0, isValid -> 0, tCap -> 0.0, open -> 0.0, amount -> 0.0, exchange -> SZ, low -> 0.0, date -> 20190102, forwardAdjRatio -> 0.0, average -> 0.0, ticker -> 000001, deals -> 0.0, close -> 13.0, mCap -> 0.0, backwardAdjRatio -> 0.0, volume -> 0.0, changeRate -> 0.0, high -> 0.0, turnoverRate -> 0.0)
-Map(amplitude -> 0.0, name -> , preClose -> 0.0, isValid -> 0, tCap -> 0.0, open -> 0.0, amount -> 0.0, exchange -> SZ, low -> 0.0, date -> 20190103, forwardAdjRatio -> 0.0, average -> 0.0, ticker -> 000001, deals -> 0.0, close -> 13.0, mCap -> 0.0, backwardAdjRatio -> 0.0, volume -> 0.0, changeRate -> 0.0, high -> 0.0, turnoverRate -> 0.0)
-Map(amplitude -> 0.0, name -> , preClose -> 0.0, isValid -> 0, tCap -> 0.0, open -> 0.0, amount -> 0.0, exchange -> SZ, low -> 0.0, date -> 20190104, forwardAdjRatio -> 0.0, average -> 0.0, ticker -> 000001, deals -> 0.0, close -> 13.0, mCap -> 0.0, backwardAdjRatio -> 0.0, volume -> 0.0, changeRate -> 0.0, high -> 0.0, turnoverRate -> 0.0)
-Map(amplitude -> 0.0, name -> , preClose -> 0.0, isValid -> 0, tCap -> 0.0, open -> 0.0, amount -> 0.0, exchange -> SZ, low -> 0.0, date -> 20190105, forwardAdjRatio -> 0.0, average -> 0.0, ticker -> 000001, deals -> 0.0, close -> 13.0, mCap -> 0.0, backwardAdjRatio -> 0.0, volume -> 0.0, changeRate -> 0.0, high -> 0.0, turnoverRate -> 0.0)
+And resulting in [localhost](http://localhost:8070/graphql) as following:
 
-List(StockPricesEOD(20190102,000001,,SZ,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13.0,0.0,0.0,0.0,0.0,0), StockPricesEOD(20190103,000001,,SZ,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13.0,0.0,0.0,0.0,0.0,0), StockPricesEOD(20190104,000001,,SZ,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13.0,0.0,0.0,0.0,0.0,0), StockPricesEOD(20190105,000001,,SZ,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,13.0,0.0,0.0,0.0,0.0,0))
+```
+{
+  "data": {
+    "getStockPricesEOD": [
+      {
+        "date": "20190101",
+        "ticker": "000001",
+        "open": 10,
+        "close": 13
+      },
+      {
+        "date": "20190102",
+        "ticker": "000001",
+        "open": 10,
+        "close": 13
+      },
+      {
+        "date": "20190103",
+        "ticker": "000001",
+        "open": 10,
+        "close": 13
+      },
+      {
+        "date": "20190104",
+        "ticker": "000001",
+        "open": 10,
+        "close": 13
+      },
+      {
+        "date": "20190105",
+        "ticker": "000001",
+        "open": 10,
+        "close": 13
+      }
+    ]
+  }
+}
 ```

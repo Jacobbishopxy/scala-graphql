@@ -99,15 +99,24 @@ package object scalaGraphql {
     import driver.api._
     import Copyable.copy
 
-    type DynType = String with Double with Int with Option[String] with Option[Double] with Option[Int]
+    type DynType = String
+      with Double
+      with Int
+      with Boolean
+      with Option[String]
+      with Option[Double]
+      with Option[Int]
+      with Option[Boolean]
 
     case class DynCol[T <: Table[_]](col: String) {
       def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
       def dbl: Dynamic[T, Double] = Dynamic[T, Double](_.column(col))
       def int: Dynamic[T, Int] = Dynamic[T, Int](_.column(col))
+      def bll: Dynamic[T, Boolean] = Dynamic[T, Boolean](_.column(col))
       def optStr: Dynamic[T, Option[String]] = Dynamic[T, Option[String]](_.column(col))
       def optDbl: Dynamic[T, Option[Double]] = Dynamic[T, Option[Double]](_.column(col))
       def optInt: Dynamic[T, Option[Int]] = Dynamic[T, Option[Int]](_.column(col))
+      def optBll: Dynamic[T, Option[Boolean]] = Dynamic[T, Option[Boolean]](_.column(col))
     }
 
     def constructDyn[T](m: Map[String, T], fields: Seq[String]): Seq[T] =
@@ -127,10 +136,10 @@ package object scalaGraphql {
           }
       }
 
-    def constructQueryFn[T <: Table[_], C, R](fieldMap: Map[String, Dynamic[T, _]],
-                                              defaultCase: C)
-                                             (query: Query[T, C, Seq],
-                                              selectedFields: Seq[String]): Seq[C] = {
+    def constructQueryFnSeqResult[T <: Table[_], C, R](fieldMap: Map[String, Dynamic[T, _]],
+                                                       defaultCase: C)
+                                                      (query: Query[T, C, Seq],
+                                                       selectedFields: Seq[String]): Seq[C] = {
 
       val dyn = constructDyn(fieldMap, selectedFields)
 
