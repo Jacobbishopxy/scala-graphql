@@ -58,4 +58,5 @@ object Dependencies {
 
   val deps = libraryDependencies ++= Compiles.deps
 
+  val nexus = "http://192.168.50.130:8091/repository"
 }

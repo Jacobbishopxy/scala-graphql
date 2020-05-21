@@ -1,6 +1,6 @@
 package com.github.jacobbishopxy.scalaGraphql.prices
 
-import com.github.jacobbishopxy.scalaGraphql.Repo
+import com.github.jacobbishopxy.scalaGraphql.Repositories
 import sangria.macros.derive._
 import sangria.marshalling.FromInput
 import sangria.schema._
@@ -32,7 +32,7 @@ object SchemaDef {
   val (startDate, endDate) =
     (Argument("start", StringType), Argument("end", StringType))
 
-  val FieldDef: List[Field[Repo, Unit]] = fields[Repo, Unit](
+  val FieldDef: List[Field[Repositories, Unit]] = fields[Repositories, Unit](
     Field("getStockPricesEOD", ListType(StockPricesEODType),
       description = Some("获取股票日频行情"),
       arguments = stockTickers :: startDate :: endDate :: Nil,
