@@ -1,7 +1,7 @@
 
 ThisBuild / name := "scala-graphql"
 
-resolvers += "Nexus" at (Dependencies.nexus + "/maven-public")
+resolvers += ("Nexus" at Dependencies.nexus + "/maven-public").withAllowInsecureProtocol(true)
 
 lazy val commonSettings = Seq(
   organization := "com.github.jacobbishopxy",

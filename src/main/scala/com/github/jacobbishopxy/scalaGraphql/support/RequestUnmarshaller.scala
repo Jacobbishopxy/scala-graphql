@@ -1,4 +1,4 @@
-package com.github.jacobbishopxy.scalaGraphql
+package com.github.jacobbishopxy.scalaGraphql.support
 
 import java.nio.charset.Charset
 
@@ -15,6 +15,9 @@ import sangria.renderer.{QueryRenderer, QueryRendererConfig}
 
 import scala.collection.immutable.Seq
 
+/**
+ * Created by Jacob Xie on 5/21/2020
+ */
 object RequestUnmarshaller {
   val `application/graphql`: MediaType.WithFixedCharset = MediaType.applicationWithFixedCharset("graphql", HttpCharsets.`UTF-8`, "graphql")
 

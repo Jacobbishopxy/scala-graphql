@@ -4,11 +4,6 @@ import java.lang.reflect.Modifier
 
 import sangria.schema.Context
 import slick.jdbc.JdbcProfile
-import slick.lifted.RepShape
-
-import scala.concurrent.Await
-import scala.concurrent.duration._
-import scala.util.{Failure, Success, Try}
 
 
 /**
@@ -61,103 +56,11 @@ package object scalaGraphql {
     }
   }
 
-  trait DBComponent {
+  trait DatabaseComponent {
     val driver: JdbcProfile
     val dbCfg: String
 
     val db: driver.backend.DatabaseDef = driver.backend.Database.forConfig(dbCfg)
-  }
-
-  trait SlickDynamic {
-
-    val driver: JdbcProfile
-
-    import slick.ast.TypedType
-    import driver.api._
-    import scala.reflect.ClassTag
-
-    case class Dynamic[T <: Table[_], C](f: T => Rep[C])(implicit val ct: TypedType[C])
-
-    class DynamicProductShape[Level <: ShapeLevel](val shapes: Seq[Shape[_ <: ShapeLevel, _, _, _]])
-      extends MappedProductShape[Level, Seq[Any], Seq[Any], Seq[Any], Seq[Any]] {
-
-      val classTag: ClassTag[Seq[Any]] = implicitly[ClassTag[Seq[Any]]]
-
-      override def getIterator(value: Seq[Any]): Iterator[Any] = value.iterator
-      override def getElement(value: Seq[Any], idx: Int): Any = value(idx)
-      override def buildValue(elems: IndexedSeq[Any]): Any = elems
-      override def copy(shapes: Seq[Shape[_ <: ShapeLevel, _, _, _]]): Shape[Level, _, _, _] =
-        new DynamicProductShape(shapes)
-
-    }
-  }
-
-  trait DynHelper extends SlickDynamic with DBComponent {
-
-    val queryTimeout: FiniteDuration = 30.seconds
-
-    import driver.api._
-    import Copyable.copy
-
-    type DynType = String
-      with Double
-      with Int
-      with Boolean
-      with Option[String]
-      with Option[Double]
-      with Option[Int]
-      with Option[Boolean]
-
-    case class DynCol[T <: Table[_]](col: String) {
-      def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
-      def dbl: Dynamic[T, Double] = Dynamic[T, Double](_.column(col))
-      def int: Dynamic[T, Int] = Dynamic[T, Int](_.column(col))
-      def bll: Dynamic[T, Boolean] = Dynamic[T, Boolean](_.column(col))
-      def optStr: Dynamic[T, Option[String]] = Dynamic[T, Option[String]](_.column(col))
-      def optDbl: Dynamic[T, Option[Double]] = Dynamic[T, Option[Double]](_.column(col))
-      def optInt: Dynamic[T, Option[Int]] = Dynamic[T, Option[Int]](_.column(col))
-      def optBll: Dynamic[T, Option[Boolean]] = Dynamic[T, Option[Boolean]](_.column(col))
-    }
-
-    def constructDyn[T](m: Map[String, T], fields: Seq[String]): Seq[T] =
-      fields.foldLeft(Seq.empty[T]) {
-        case (acc, ele) => m.get(ele).fold(acc)(acc :+ _)
-      }
-
-    def resConvert[R](defaultCaseClass: R, fields: Seq[String], res: Seq[Seq[Any]]): List[R] =
-      res.foldLeft(List.empty[R]) {
-        case (acc, ele) =>
-          Try(copy(defaultCaseClass, fields.zip(ele).toMap)) match {
-            case Success(v) =>
-              println(v)
-              acc :+ v
-            case Failure(_) =>
-              acc
-          }
-      }
-
-    def constructQueryFnSeqResult[T <: Table[_], C, R](fieldMap: Map[String, Dynamic[T, _]],
-                                                       defaultCase: C)
-                                                      (query: Query[T, C, Seq],
-                                                       selectedFields: Seq[String]): Seq[C] = {
-
-      val dyn = constructDyn(fieldMap, selectedFields)
-
-      implicit def dynamicShape[Level <: ShapeLevel]: DynamicProductShape[Level] =
-        new DynamicProductShape[Level](dyn.map(_ => RepShape))
-
-      val que = query
-        .map(a => dyn.map(d => d.f(a)))
-        .result
-
-      val res = Await.result(db.run(que), queryTimeout)
-      resConvert(defaultCase, selectedFields, res)
-    }
-
-    implicit class DynMaker(d: String) {
-      def toDyn[T <: Table[_]]: DynCol[T] = DynCol[T](d)
-    }
-
   }
 
 }

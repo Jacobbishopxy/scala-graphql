@@ -7,6 +7,7 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
+import com.github.jacobbishopxy.scalaGraphql.support.CorsSupport
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import io.circe._
 import io.circe.optics.JsonPath._
@@ -26,7 +27,8 @@ import scala.util.{Failure, Success}
  * Created by Jacob Xie on 5/21/2020
  */
 trait Service extends CorsSupport {
-  import RequestUnmarshaller._
+
+  import com.github.jacobbishopxy.scalaGraphql.support.RequestUnmarshaller._
 
   implicit val system: ActorSystem = ActorSystem("sangria-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -125,10 +127,10 @@ trait Service extends CorsSupport {
 
   def start(): Unit = {
     Http().bindAndHandle(
-        corsHandler(route),
-        "0.0.0.0",
-        sys.props.get("http.port").fold(port)(_.toInt)
-      )
+      corsHandler(route),
+      "0.0.0.0",
+      sys.props.get("http.port").fold(port)(_.toInt)
+    )
     println(s"open a browser with URL: http://localhost:$port\n")
   }
 

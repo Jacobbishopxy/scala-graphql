@@ -1,4 +1,4 @@
-package com.github.jacobbishopxy.scalaGraphql
+package com.github.jacobbishopxy.scalaGraphql.support
 
 import akka.http.scaladsl.model.HttpMethods._
 import akka.http.scaladsl.model.headers._
@@ -6,8 +6,11 @@ import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.{Directive0, Route}
 
+/**
+ * Created by Jacob Xie on 5/21/2020
+ */
 trait CorsSupport {
-  private def addAccessControlHeaders: Directive0 = {
+  private def addAccessControlHeaders(): Directive0 = {
     respondWithHeaders(
       `Access-Control-Allow-Origin`.*,
       `Access-Control-Allow-Credentials`(true),
@@ -23,7 +26,7 @@ trait CorsSupport {
     )
   }
 
-  def corsHandler(r: Route): Route = addAccessControlHeaders {
+  def corsHandler(r: Route): Route = addAccessControlHeaders() {
     preflightRequestHandler ~ r
   }
 }
