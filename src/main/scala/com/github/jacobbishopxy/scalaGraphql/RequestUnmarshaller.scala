@@ -15,7 +15,7 @@ import sangria.renderer.{QueryRenderer, QueryRendererConfig}
 
 import scala.collection.immutable.Seq
 
-object GraphQLRequestUnmarshaller {
+object RequestUnmarshaller {
   val `application/graphql`: MediaType.WithFixedCharset = MediaType.applicationWithFixedCharset("graphql", HttpCharsets.`UTF-8`, "graphql")
 
   def explicitlyAccepts(mediaType: MediaType): Directive0 =

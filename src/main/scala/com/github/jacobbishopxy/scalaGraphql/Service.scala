@@ -7,7 +7,6 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
-import com.github.jacobbishopxy.scalaGraphql.GraphQLRequestUnmarshaller.{explicitlyAccepts, _}
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import io.circe._
 import io.circe.optics.JsonPath._
@@ -27,6 +26,8 @@ import scala.util.{Failure, Success}
  * Created by Jacob Xie on 5/21/2020
  */
 trait Service extends CorsSupport {
+  import RequestUnmarshaller._
+
   implicit val system: ActorSystem = ActorSystem("sangria-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
   implicit val dispatcher: ExecutionContextExecutor = system.dispatcher
