@@ -6,6 +6,10 @@
 
 - Run server: `sbt run`
 
+## Structure
+
+![img](scala-graphql.png)
+
 ## Note 
 
 1. `prices`: business code
