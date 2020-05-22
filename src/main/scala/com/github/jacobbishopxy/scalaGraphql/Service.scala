@@ -1,5 +1,7 @@
 package com.github.jacobbishopxy.scalaGraphql
 
+import com.github.jacobbishopxy.scalaGraphql.support.CorsSupport
+
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.model.MediaTypes._
@@ -7,7 +9,6 @@ import akka.http.scaladsl.model.StatusCodes._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
-import com.github.jacobbishopxy.scalaGraphql.support.CorsSupport
 import de.heikoseeberger.akkahttpcirce.ErrorAccumulatingCirceSupport._
 import io.circe._
 import io.circe.optics.JsonPath._
@@ -29,6 +30,7 @@ import scala.util.{Failure, Success}
 trait Service extends CorsSupport {
 
   import com.github.jacobbishopxy.scalaGraphql.support.RequestUnmarshaller._
+  import Service._
 
   implicit val system: ActorSystem = ActorSystem("sangria-server")
   implicit val materializer: ActorMaterializer = ActorMaterializer()
@@ -50,71 +52,53 @@ trait Service extends CorsSupport {
       executeGQL(query, operationName, variables, tracing)
         .map(OK → _)
         .recover {
-          case error: QueryAnalysisError ⇒ BadRequest → error.resolveError
-          case error: ErrorWithResolver ⇒ InternalServerError → error.resolveError
+          case error: QueryAnalysisError => BadRequest → error.resolveError
+          case error: ErrorWithResolver => InternalServerError → error.resolveError
         }
     )
 
-  private def formatError(error: Throwable): Json = error match {
-    case syntaxError: SyntaxError ⇒
-      Json.obj("errors" → Json.arr(
-        Json.obj(
-          "message" → Json.fromString(syntaxError.getMessage),
-          "locations" → Json.arr(Json.obj(
-            "line" → Json.fromBigInt(syntaxError.originalError.position.line),
-            "column" → Json.fromBigInt(syntaxError.originalError.position.column))))))
-    case NonFatal(e) ⇒
-      formatError(e.getMessage)
-    case e ⇒
-      throw e
-  }
 
-  private def formatError(message: String): Json =
-    Json.obj("errors" → Json.arr(Json.obj("message" → Json.fromString(message))))
+  private def queryOnSuccess(tracing: Option[String],
+                             variables: Option[String],
+                             document: Document,
+                             operationName: Option[String],
+                             noneObj: Json = Json.obj()) =
+    variables.map(parse) match {
+      case Some(Left(error)) => complete(BadRequest, formatError(error))
+      case Some(Right(json)) => executeGraphQL(document, operationName, json, tracing.isDefined)
+      case None => executeGraphQL(document, operationName, noneObj, tracing.isDefined)
+    }
 
   private val route: Route =
-    optionalHeaderValueByName("X-Apollo-Tracing") { tracing ⇒
+    optionalHeaderValueByName("X-Apollo-Tracing") { tracing =>
       path("graphql") {
         get {
           explicitlyAccepts(`text/html`) {
             getFromResource("assets/playground.html")
           } ~
-            parameters('query, 'operationName.?, 'variables.?) { (query, operationName, variables) ⇒
+            parameters('query, 'operationName.?, 'variables.?) { (query, operationName, variables) =>
               QueryParser.parse(query) match {
-                case Success(ast) ⇒
-                  variables.map(parse) match {
-                    case Some(Left(error)) ⇒ complete(BadRequest, formatError(error))
-                    case Some(Right(json)) ⇒ executeGraphQL(ast, operationName, json, tracing.isDefined)
-                    case None ⇒ executeGraphQL(ast, operationName, Json.obj(), tracing.isDefined)
-                  }
-                case Failure(error) ⇒ complete(BadRequest, formatError(error))
+                case Success(ast) => queryOnSuccess(tracing, variables, ast, operationName)
+                case Failure(error) => complete(BadRequest, formatError(error))
               }
             }
         } ~
           post {
-            parameters('query.?, 'operationName.?, 'variables.?) { (queryParam, operationNameParam, variablesParam) ⇒
-              entity(as[Json]) { body ⇒
+            parameters('query.?, 'operationName.?, 'variables.?) { (queryParam, operationNameParam, variablesParam) =>
+              entity(as[Json]) { body =>
                 val query = queryParam orElse root.query.string.getOption(body)
                 val operationName = operationNameParam orElse root.operationName.string.getOption(body)
                 val variablesStr = variablesParam orElse root.variables.string.getOption(body)
+                val noneObj = root.variables.json.getOption(body) getOrElse Json.obj()
 
                 query.map(QueryParser.parse(_)) match {
-                  case Some(Success(ast)) ⇒
-                    variablesStr.map(parse) match {
-                      case Some(Left(error)) ⇒ complete(BadRequest, formatError(error))
-                      case Some(Right(json)) ⇒ executeGraphQL(ast, operationName, json, tracing.isDefined)
-                      case None ⇒ executeGraphQL(ast, operationName, root.variables.json.getOption(body) getOrElse Json.obj(), tracing.isDefined)
-                    }
-                  case Some(Failure(error)) ⇒ complete(BadRequest, formatError(error))
-                  case None ⇒ complete(BadRequest, formatError("No query to execute"))
+                  case Some(Success(ast)) => queryOnSuccess(tracing, variablesStr, ast, operationName, noneObj)
+                  case Some(Failure(error)) => complete(BadRequest, formatError(error))
+                  case None => complete(BadRequest, formatError("No query to execute"))
                 }
               } ~
-                entity(as[Document]) { document ⇒
-                  variablesParam.map(parse) match {
-                    case Some(Left(error)) ⇒ complete(BadRequest, formatError(error))
-                    case Some(Right(json)) ⇒ executeGraphQL(document, operationNameParam, json, tracing.isDefined)
-                    case None ⇒ executeGraphQL(document, operationNameParam, Json.obj(), tracing.isDefined)
-                  }
+                entity(as[Document]) { document =>
+                  queryOnSuccess(tracing, variablesParam, document, operationNameParam)
                 }
             }
           }
@@ -134,5 +118,24 @@ trait Service extends CorsSupport {
     println(s"open a browser with URL: http://localhost:$port\n")
   }
 
+}
+
+
+object Service {
+
+  private def formatError(error: Throwable): Json = error match {
+    case syntaxError: SyntaxError =>
+      Json.obj("errors" → Json.arr(
+        Json.obj(
+          "message" → Json.fromString(syntaxError.getMessage),
+          "locations" → Json.arr(Json.obj(
+            "line" → Json.fromBigInt(syntaxError.originalError.position.line),
+            "column" → Json.fromBigInt(syntaxError.originalError.position.column))))))
+    case NonFatal(e) => formatError(e.getMessage)
+    case e => throw e
+  }
+
+  private def formatError(message: String): Json =
+    Json.obj("errors" → Json.arr(Json.obj("message" → Json.fromString(message))))
 }
 
