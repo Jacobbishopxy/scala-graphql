@@ -2,6 +2,8 @@ package com.github.jacobbishopxy.scalaGraphql.dynamic
 
 import com.github.jacobbishopxy.scalaGraphql.{Copyable, DatabaseComponent}
 import slick.lifted.RepShape
+import shapeless._
+import shapeless.labelled._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -24,6 +26,8 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
     with Option[Double]
     with Option[Int]
     with Option[Boolean]
+
+  type FieldMapType = Map[String, Dynamic[_, _ >: DynType]]
 
   case class DynCol[T <: Table[_]](col: String) {
     def str: Dynamic[T, String] = Dynamic[T, String](_.column(col))
@@ -79,4 +83,59 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
     def toDyn[T <: Table[_]]: DynCol[T] = DynCol[T](d)
   }
 
+
+  private def typeStrToDyn[T <: Table[_]](keyName: String, typeStr: String): Dynamic[T, _ >: DynType] = typeStr match {
+    case "String" => keyName.toDyn[T].str
+    case "Double" => keyName.toDyn[T].dbl
+    case "Int" => keyName.toDyn[T].int
+    case "Boolean" => keyName.toDyn[T].bll
+    case "Option[String]" => keyName.toDyn[T].optStr
+    case "Option[Double]" => keyName.toDyn[T].optDbl
+    case "Option[Int]" => keyName.toDyn[T].optInt
+    case "Option[Boolean]" => keyName.toDyn[T].optBll
+  }
+
+  object ExpectedMetadata {
+
+    sealed trait GetFieldTypes[T, TB <: Table[_]] {
+      def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]]
+    }
+
+    def apply[T, TB <: Table[_]](renameDict: Option[Map[String, String]] = None)
+                                (implicit g: GetFieldTypes[T, TB]): Map[String, Dynamic[TB, _ >: DynType]] =
+      g.getFieldTypes(renameDict)
+
+    implicit def hNil[TB <: Table[_]]: GetFieldTypes[HNil, TB] = new GetFieldTypes[HNil, TB] {
+      def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Nothing] = Map.empty
+    }
+
+    implicit def hCons[K <: Symbol, V, T <: HList, TB <: Table[_]](implicit
+                                                                   wit: Witness.Aux[K],
+                                                                   typ: Typeable[V],
+                                                                   rest: GetFieldTypes[T, TB]): GetFieldTypes[FieldType[K, V] :: T, TB] =
+      new GetFieldTypes[FieldType[K, V] :: T, TB] {
+        def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]] = {
+          val name = wit.value.name
+          val typeDescribe = typ.describe
+
+          val s: (String, Dynamic[TB, _ >: DynType]) = renameDict match {
+            case None => name -> typeStrToDyn[TB](name, typeDescribe)
+            case Some(d) => name -> typeStrToDyn[TB](d.getOrElse(name, name), typeDescribe)
+          }
+
+          rest.getFieldTypes(renameDict) + s
+        }
+      }
+
+    implicit def caseClass[T, G, TB <: Table[_]](implicit
+                                                 lg: LabelledGeneric.Aux[T, G],
+                                                 rest: GetFieldTypes[G, TB]): GetFieldTypes[T, TB] =
+      new GetFieldTypes[T, TB] {
+        def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]] =
+          rest.getFieldTypes(renameDict)
+      }
+  }
+
+
 }
+
