@@ -2,56 +2,40 @@
 
 - Stack: Sangria + Slick + Akka Http
 
-- Purpose: dynamic column query by request fields.
+- Purpose: a package support dynamic column query by request fields.
 
-- Run server: `sbt run`
+- Run test server: please check [this test case](src/test/scala/DevApp.scala).
+
 
 ## Structure
 
 ![img](./scala-graphql.png)
 
-1. [`package.scala`](./src/main/scala/com/github/jacobbishopxy/scalaGraphql/package.scala): core functionality
+1. `dynamic`
 
-    - `Copyable`: copy a class and update by scala `Map`
+    - [`DynamicHelper`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/dynamic/DynamicHelper.scala)
     
-    - `SlickDynamic`: dynamically construct table columns
+    - [`SlickDynamic`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/dynamic/SlickDynamic.scala)
+
+2. `support`
+
+    - [`CorsSupport`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/support/CorsSupport.scala)
     
-    - `DynHelper`: call `constructQueryFn` 
+    - [`RequestUnmarshaller`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/support/RequestUnmarshaller.scala)
 
-2. [`Service.scala`](./src/main/scala/com/github/jacobbishopxy/scalaGraphql/Service.scala)
+3. [`package.scala`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/package.scala)
 
-    App service
+4. [`Service.scala`](src/main/scala/com/github/jacobbishopxy/scalaGraphql/Service.scala)
 
-3. `prices`: business code
-
-    - `Init.scala`: demo data
-    
-    - `Model.scala`: data model
-    
-        - Model object: case class
-        
-        - Model trait: tableQuery definition
-    
-    - `Resolver.scala`: data handler
-    
-    - `SchemaDef.scala`: sangria schema
-
-4. [`Repositories.scala`](./src/main/scala/com/github/jacobbishopxy/scalaGraphql/Repositories.scala)
-
-    Resolvers
-
-5. [`Schemas.scala`](./src/main/scala/com/github/jacobbishopxy/scalaGraphql/Schemas.scala)
-
-    Schemas
-    
-6. `Server.scala`
-
-    Main
 
 
 ## Test
 
-1. `test/DevSlickDynamicColsQuery.scala`
+1. [`DevApp`](src/test/scala/DevApp.scala)
+
+    test business code using 
+
+2. [`DevSlickDynamicColsQuery`](src/test/scala/DevSlickDynamicColsQuery.scala)
 
     test case
 
