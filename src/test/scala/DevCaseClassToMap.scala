@@ -29,8 +29,8 @@ object DevCaseClassToMap extends App {
         def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, String] = {
 
           val s: (String, String) = renameDict match {
-            case None => (wit.value.name -> typ.describe)
-            case Some(d) => (d.getOrElse(wit.value.name, wit.value.name) -> typ.describe)
+            case None => wit.value.name -> typ.describe
+            case Some(d) => d.getOrElse(wit.value.name, wit.value.name) -> typ.describe
           }
           rest.getFieldTypes(renameDict) + s
         }

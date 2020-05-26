@@ -168,30 +168,7 @@ object Prices {
     private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
       (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
 
-    private val defaultStockPricesEOD =
-      StockPricesEOD(
-        date = "",
-        ticker = "",
-        name = None,
-        exchange = None,
-        tCap = None,
-        mCap = None,
-        volume = None,
-        amount = None,
-        deals = None,
-        turnoverRate = None,
-        changeRate = None,
-        amplitude = None,
-        open = None,
-        high = None,
-        low = None,
-        close = None,
-        preClose = None,
-        average = None,
-        backwardAdjRatio = None,
-        forwardAdjRatio = None,
-        isValid = None,
-      )
+    private val defaultStockPricesEOD = DefaultCaseClass[StockPricesEOD]
 
     private val fm = Map(
       "date" -> "trade_date",
@@ -210,7 +187,7 @@ object Prices {
     )
 
     private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: DynType]] =
-      ExpectedMetadata[StockPricesEOD, StockPricesEODTable](Some(fm))
+      GenerateFieldMap[StockPricesEOD, StockPricesEODTable](Some(fm))
 
     private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery
       .filter(d => d.ticker.inSet(t) && cond1(d) && cond2(s, e)(d))
