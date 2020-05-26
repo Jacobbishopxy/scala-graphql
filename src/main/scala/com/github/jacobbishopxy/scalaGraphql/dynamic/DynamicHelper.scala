@@ -1,9 +1,7 @@
 package com.github.jacobbishopxy.scalaGraphql.dynamic
 
-import com.github.jacobbishopxy.scalaGraphql.{Copyable, DatabaseComponent}
+import com.github.jacobbishopxy.scalaGraphql.utils.{Copyable, DefaultCaseClass, ExpectedMetadata}
 import slick.lifted.RepShape
-import shapeless._
-import shapeless.labelled._
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
@@ -65,8 +63,8 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
         }
     }
 
-  def queryFnForSeqResult[C, T <: Table[_]](fieldMap: Map[String, Dynamic[T, _]],
-                                            defaultCase: C)
+  def queryFnForSeqResult[C, T <: Table[C]](fieldMap: Map[String, Dynamic[T, _]],
+                                            defaultCaseClass: C)
                                            (query: Query[T, C, Seq],
                                             selectedFields: Seq[String]): Seq[C] = {
 
@@ -80,7 +78,7 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
       .result
 
     val res = Await.result(db.run(que), queryTimeout)
-    resConvert(defaultCase, selectedFields, res)
+    resConvert(defaultCaseClass, selectedFields, res)
   }
 
   private def typeStrToDyn[T <: Table[_]](keyName: String, typeStr: String): Dynamic[T, _ >: DynType] =
@@ -95,116 +93,20 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
       case "Option[Boolean]" => keyName.toDyn[T].optBll
     }
 
-  object GenerateFieldMap {
-
-    sealed trait GetFieldTypes[T, TB <: Table[_]] {
-      def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]]
-    }
-
-    def apply[T, TB <: Table[_]](renameDict: Option[Map[String, String]] = None)
-                                (implicit g: GetFieldTypes[T, TB]): Map[String, Dynamic[TB, _ >: DynType]] =
-      g.getFieldTypes(renameDict)
-
-    implicit def hNil[TB <: Table[_]]: GetFieldTypes[HNil, TB] = new GetFieldTypes[HNil, TB] {
-      def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Nothing] = Map.empty
-    }
-
-    implicit def hCons[K <: Symbol, V, T <: HList, TB <: Table[_]](implicit
-                                                                   wit: Witness.Aux[K],
-                                                                   typ: Typeable[V],
-                                                                   rest: GetFieldTypes[T, TB]): GetFieldTypes[FieldType[K, V] :: T, TB] =
-      new GetFieldTypes[FieldType[K, V] :: T, TB] {
-        def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]] = {
-          val name = wit.value.name
-          val typeDescribe = typ.describe
-
-          val s: (String, Dynamic[TB, _ >: DynType]) = renameDict match {
-            case None => name -> typeStrToDyn[TB](name, typeDescribe)
-            case Some(d) => name -> typeStrToDyn[TB](d.getOrElse(name, name), typeDescribe)
-          }
-
-          rest.getFieldTypes(renameDict) + s
-        }
-      }
-
-    implicit def caseClass[T, G, TB <: Table[_]](implicit
-                                                 lg: LabelledGeneric.Aux[T, G],
-                                                 rest: GetFieldTypes[G, TB]): GetFieldTypes[T, TB] =
-      new GetFieldTypes[T, TB] {
-        def getFieldTypes(renameDict: Option[Map[String, String]] = None): Map[String, Dynamic[TB, _ >: DynType]] =
-          rest.getFieldTypes(renameDict)
-      }
-  }
-
-  object DefaultCaseClass {
-
-    sealed trait Instantiate[T] {
-      def instantiate: T
-    }
-
-    def apply[T](implicit g: Instantiate[T]): T = g.instantiate
-
-    implicit def string: Instantiate[String] = new Instantiate[String] {
-      override def instantiate: String = ""
-    }
-
-    implicit def int: Instantiate[Int] = new Instantiate[Int] {
-      override def instantiate: Int = 0
-    }
-
-    implicit def boolean: Instantiate[Boolean] = new Instantiate[Boolean] {
-      override def instantiate: Boolean = false
-    }
-
-    implicit def double: Instantiate[Double] = new Instantiate[Double] {
-      override def instantiate: Double = .0
-    }
-
-    implicit def optionString: Instantiate[Option[String]] = new Instantiate[Option[String]] {
-      override def instantiate: Option[String] = None
-    }
-
-    implicit def optionInt: Instantiate[Option[Int]] = new Instantiate[Option[Int]] {
-      override def instantiate: Option[Int] = None
-    }
-
-    implicit def optionBoolean: Instantiate[Option[Boolean]] = new Instantiate[Option[Boolean]] {
-      override def instantiate: Option[Boolean] = None
-    }
-
-    implicit def optionDouble: Instantiate[Option[Double]] = new Instantiate[Option[Double]] {
-      override def instantiate: Option[Double] = None
-    }
-
-    implicit def hNil: Instantiate[HNil] =
-      new Instantiate[HNil] {
-        override def instantiate: HNil = HNil
-      }
-
-    implicit def hList[H, T <: HList](implicit
-                                      headGen: Instantiate[H],
-                                      tailGen: Instantiate[T]): Instantiate[H :: T] =
-      new Instantiate[H :: T] {
-        override def instantiate: H :: T = headGen.instantiate :: tailGen.instantiate
-      }
-
-    implicit def caseClass[T, G](implicit
-                                 ga: Generic.Aux[T, G],
-                                 inst: Instantiate[G]): Instantiate[T] =
-      new Instantiate[T] {
-        override def instantiate: T = ga.from(inst.instantiate)
-      }
-
-  }
-
-
-  def constructQueryFnForSeqResult[C, T <: Table[_]](renameMap: RenameMap)
+  def constructQueryFnForSeqResult[C, T <: Table[C]](renameMap: RenameMap)
                                                     (query: Query[T, C, Seq],
                                                      selectedFields: Seq[String])
-                                                    (implicit cc: DefaultCaseClass.Instantiate[C],
-                                                     ct: GenerateFieldMap.GetFieldTypes[C, T]): Seq[C] = {
-    lazy val fieldMap = GenerateFieldMap[C, T](renameMap)
-    lazy val defaultCaseClass = DefaultCaseClass[C]
+                                                    (implicit dc: DefaultCaseClass.Instantiate[C],
+                                                     ft: ExpectedMetadata.GetFieldTypes[C]): Seq[C] = {
+
+    val fieldMap: Map[String, Dynamic[T, _ >: DynType]] = ExpectedMetadata[C].map {
+      case (k, v) => renameMap match {
+        case None => k -> typeStrToDyn[T](k, v)
+        case Some(t) => k -> typeStrToDyn[T](t.getOrElse(k, k), v)
+      }
+    }.toMap
+
+    val defaultCaseClass = DefaultCaseClass[C]
 
     queryFnForSeqResult(fieldMap, defaultCaseClass)(query, selectedFields)
   }

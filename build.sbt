@@ -10,7 +10,7 @@ lazy val commonSettings = Seq(
 )
 
 lazy val rootConfig = Seq(
-  version := "0.1"
+  version := "0.1.1"
 )
 
 lazy val root = Project(id = "scala-graphql", base = file("."))
