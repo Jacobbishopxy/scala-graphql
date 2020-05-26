@@ -16,7 +16,6 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
   val queryTimeout: FiniteDuration = 30.seconds
 
   import driver.api._
-  import Copyable.copy
 
   type RenameMap = Option[Map[String, String]]
   type DynType = String
@@ -60,16 +59,16 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
   def resConvert[R](defaultCaseClass: R, fields: Seq[String], res: Seq[Seq[Any]]): List[R] =
     res.foldLeft(List.empty[R]) {
       case (acc, ele) =>
-        Try(copy(defaultCaseClass, fields.zip(ele).toMap)) match {
+        Try(Copyable.copy(defaultCaseClass, fields.zip(ele).toMap)) match {
           case Success(v) => acc :+ v
           case Failure(_) => acc
         }
     }
 
-  def constructQueryFnSeqResult[T <: Table[_], C](fieldMap: Map[String, Dynamic[T, _]],
-                                                  defaultCase: C)
-                                                 (query: Query[T, C, Seq],
-                                                  selectedFields: Seq[String]): Seq[C] = {
+  def queryFnForSeqResult[C, T <: Table[_]](fieldMap: Map[String, Dynamic[T, _]],
+                                            defaultCase: C)
+                                           (query: Query[T, C, Seq],
+                                            selectedFields: Seq[String]): Seq[C] = {
 
     val dyn = constructDyn(fieldMap, selectedFields)
 
@@ -198,5 +197,16 @@ trait DynamicHelper extends SlickDynamic with DatabaseComponent {
 
   }
 
+
+  def constructQueryFnForSeqResult[C, T <: Table[_]](renameMap: RenameMap)
+                                                    (query: Query[T, C, Seq],
+                                                     selectedFields: Seq[String])
+                                                    (implicit cc: DefaultCaseClass.Instantiate[C],
+                                                     ct: GenerateFieldMap.GetFieldTypes[C, T]): Seq[C] = {
+    lazy val fieldMap = GenerateFieldMap[C, T](renameMap)
+    lazy val defaultCaseClass = DefaultCaseClass[C]
+
+    queryFnForSeqResult(fieldMap, defaultCaseClass)(query, selectedFields)
+  }
 }
 

@@ -161,15 +161,7 @@ object Prices {
     import driver.api._
     import Model._
 
-
-    private def cond1: StockPricesEODTable => Rep[Boolean] =
-      (d: StockPricesEODTable) => d.isValid.getOrElse(0) === 1
-
-    private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
-      (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
-
-    private val defaultStockPricesEOD = DefaultCaseClass[StockPricesEOD]
-
+    // step 1: define queryFn
     private val fm = Map(
       "date" -> "trade_date",
       "ticker" -> "stock_code",
@@ -186,14 +178,19 @@ object Prices {
       "isValid" -> "is_valid"
     )
 
-    private val stockPricesEODFieldMap: Map[String, Dynamic[StockPricesEODTable, _ >: DynType]] =
-      GenerateFieldMap[StockPricesEOD, StockPricesEODTable](Some(fm))
+    private val stockPricesFn = constructQueryFnForSeqResult[StockPricesEOD, StockPricesEODTable](Some(fm))(_, _)
+
+    // step 2: define query filter
+    private def cond1: StockPricesEODTable => Rep[Boolean] =
+      (d: StockPricesEODTable) => d.isValid.getOrElse(0) === 1
+
+    private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
+      (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
 
     private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery
       .filter(d => d.ticker.inSet(t) && cond1(d) && cond2(s, e)(d))
 
-    private val stockPricesFn = constructQueryFnSeqResult(stockPricesEODFieldMap, defaultStockPricesEOD)(_, _)
-
+    // step 3: combine 1 & 2, this is the resolver for Sangria
     def getStockPricesEOD(fields: Seq[String])
                          (ticker: Seq[String],
                           startDate: String,
