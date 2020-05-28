@@ -55,8 +55,15 @@ object Prices {
     import driver.api._
     import Model._
 
+
+    trait GenericDataTable[T <: CommonKeys] extends Table[T] {
+      def date: Rep[String]
+
+      def ticker: Rep[String]
+    }
+
     class StockPricesEODTable(tag: Tag)
-      extends Table[StockPricesEOD](tag, "DEMO") {
+      extends Table[StockPricesEOD](tag, "DEMO") with GenericDataTable[StockPricesEOD] {
 
       def date: Rep[String] = column[String]("trade_date")
 
@@ -132,6 +139,11 @@ object Prices {
 
   object Model {
 
+    trait CommonKeys {
+      def date: String
+      def ticker: String
+    }
+
     case class StockPricesEOD(date: String,
                               ticker: String,
                               name: Option[String],
@@ -152,7 +164,7 @@ object Prices {
                               average: Option[Double],
                               backwardAdjRatio: Option[Double],
                               forwardAdjRatio: Option[Double],
-                              isValid: Option[Int])
+                              isValid: Option[Int]) extends CommonKeys
 
   }
 
@@ -180,22 +192,32 @@ object Prices {
 
     private val stockPricesFn = constructQueryFnForSeqResult[StockPricesEOD, StockPricesEODTable](Some(fm))(_, _)
 
-    // step 2: define query filter
-    private def cond1: StockPricesEODTable => Rep[Boolean] =
-      (d: StockPricesEODTable) => d.isValid.getOrElse(0) === 1
+    // step 2: define query filter (reusable!)
+    private def cond1[C <: CommonKeys, T <: GenericDataTable[C]](tickers: Seq[String]): T => Rep[Boolean] =
+      (d: T) => d.ticker.inSet(tickers)
 
-    private def cond2(startDate: String, endDate: String): StockPricesEODTable => Rep[Boolean] =
-      (d: StockPricesEODTable) => d.date >= startDate && d.date <= endDate
+    private def cond2[C <: CommonKeys, T <: GenericDataTable[C]](startDate: String, endDate: String): T => Rep[Boolean] =
+      (d: T) => d.date >= startDate && d.date <= endDate
+
+    private def sort1[C <: CommonKeys, T <: GenericDataTable[C]] =
+      (d: T) => (d.ticker, d.date)
 
     private val query = (t: Seq[String], s: String, e: String) => StockPricesEODTableQuery
-      .filter(d => d.ticker.inSet(t) && cond1(d) && cond2(s, e)(d))
+      .filter(d =>
+        d.isValid === 1 &&
+          cond1[StockPricesEOD, StockPricesEODTable](t)(d) &&
+          cond2[StockPricesEOD, StockPricesEODTable](s, e)(d))
+      .sortBy(sort1[StockPricesEOD, StockPricesEODTable])
 
     // step 3: combine 1 & 2, this is the resolver for Sangria
     def getStockPricesEOD(fields: Seq[String])
                          (ticker: Seq[String],
                           startDate: String,
-                          endDate: String): Seq[StockPricesEOD] =
-      stockPricesFn(query(ticker, startDate, endDate), fields)
+                          endDate: String): Seq[StockPricesEOD] = {
+      val qu = query(ticker, startDate, endDate)
+
+      stockPricesFn(qu, fields)
+    }
 
   }
 
@@ -221,7 +243,7 @@ object Prices {
       (Argument("start", StringType), Argument("end", StringType))
   }
 
-  class Init(val driver: JdbcProfile, dbCfg: String) extends Model {
+  class Init(val driver: JdbcProfile, val dbCfg: String) extends Model {
 
     import driver.api._
 

@@ -27,8 +27,6 @@ object Dependencies {
     val h2V = "1.4.196"
     val pgV = "42.2.9"
     val msSqlV = "7.4.1.jre8"
-
-    val scalaTestV = "3.0.5"
   }
 
   object Compiles {
