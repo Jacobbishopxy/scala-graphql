@@ -8,19 +8,18 @@ import sbt._
 object Dependencies {
 
   object Versions {
-    val scalaV = "2.12.10"
+    val scalaV = "2.13.1"
 
-    val sangriaV = "1.4.2"
-    val sangiraSlowlogV = "0.1.8"
-    val sangiraCirceV = "1.2.1"
+    val sangriaV = "2.0.0"
+    val sangiraCirceV = "1.3.0"
 
-    val akkaHttpV = "10.1.3"
-    val akkaHttpCirceV = "1.21.0"
+    val akkaHttpV = "10.1.8"
+    val akkaHttpCirceV = "1.32.0"
 
     val circeV = "0.12.3"
     val circeOptV = "0.12.0"
 
-    val slickV = "3.3.1"
+    val slickV = "3.3.2"
     val slf4jV = "1.7.26"
     val slicklessV = "0.3.6"
 
@@ -32,7 +31,6 @@ object Dependencies {
   object Compiles {
     lazy val deps = Seq(
       "org.sangria-graphql" %% "sangria" % Versions.sangriaV,
-      "org.sangria-graphql" %% "sangria-slowlog" % Versions.sangiraSlowlogV,
       "org.sangria-graphql" %% "sangria-circe" % Versions.sangiraCirceV,
 
       "com.typesafe.akka" %% "akka-http" % Versions.akkaHttpV,
@@ -45,7 +43,7 @@ object Dependencies {
       "com.typesafe.slick" %% "slick" % Versions.slickV,
       "com.typesafe.slick" %% "slick-hikaricp" % Versions.slickV,
       "org.slf4j" % "slf4j-nop" % Versions.slf4jV,
-      "io.underscore" % "slickless_2.12" % Versions.slicklessV,
+      "io.underscore" % "slickless_2.13" % Versions.slicklessV,
 
       "com.h2database" % "h2" % Versions.h2V,
       "org.postgresql" % "postgresql" % Versions.pgV,
